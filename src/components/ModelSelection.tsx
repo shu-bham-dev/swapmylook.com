@@ -70,25 +70,26 @@ export function ModelSelection({ onModelSelect, selectedModel }: ModelSelectionP
       </div>
 
       {/* Upload Option */}
-      <Card className="border-2 border-dashed border-pink-200 hover:border-pink-300 transition-colors p-8 text-center bg-gradient-to-br from-pink-50 to-purple-50">
-        <div className="space-y-4">
-          <div className="mx-auto w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center">
+      <Card className="border-2 border-dashed border-pink-200 hover:border-pink-300 transition-colors p-4 text-center bg-gradient-to-br from-pink-50 to-purple-50">
+        <div className="space-y-3">
+          <div className="mx-auto w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center">
             {isUploading ? (
-              <div className="animate-spin w-6 h-6 border-2 border-pink-500 border-t-transparent rounded-full" />
+              <div className="animate-spin w-4 h-4 border-2 border-pink-500 border-t-transparent rounded-full" />
             ) : (
-              <Upload className="w-6 h-6 text-pink-500" />
+              <Upload className="w-4 h-4 text-pink-500" />
             )}
           </div>
-          <div className="space-y-2">
-            <h3 className="font-medium text-gray-900">Upload Your Photo</h3>
-            <p className="text-sm text-muted-foreground">
-              {isUploading ? 'Processing your photo...' : 'JPG, PNG up to 10MB'}
+          <div className="space-y-1">
+            <h3 className="font-medium text-gray-900 text-sm">Upload Your Photo</h3>
+            <p className="text-xs text-muted-foreground">
+              {isUploading ? 'Processing...' : 'JPG, PNG up to 10MB'}
             </p>
           </div>
           <label htmlFor="model-upload" className="cursor-pointer">
-            <Button 
-              variant="outline" 
-              className="border-pink-300 text-pink-600 hover:bg-pink-50"
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-pink-300 text-pink-600 hover:bg-pink-50 text-xs"
               disabled={isUploading}
             >
               {isUploading ? 'Uploading...' : 'Choose File'}
@@ -108,11 +109,11 @@ export function ModelSelection({ onModelSelect, selectedModel }: ModelSelectionP
       {/* Predefined Models */}
       <div className="space-y-4">
         <h3 className="font-medium text-gray-900">Or select a model:</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="flex space-x-4 overflow-x-auto pb-4 -mx-2 px-2">
           {predefinedModels.map((model) => (
             <Card
               key={model.id}
-              className={`cursor-pointer transition-all duration-300 hover:scale-105 overflow-hidden ${
+              className={`cursor-pointer transition-all duration-300 hover:scale-105 overflow-hidden flex-shrink-0 w-32 ${
                 selectedModel?.id === model.id
                   ? 'ring-2 ring-pink-400 shadow-lg'
                   : 'hover:shadow-md'
@@ -128,8 +129,8 @@ export function ModelSelection({ onModelSelect, selectedModel }: ModelSelectionP
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                 <div className="absolute bottom-2 left-2 right-2">
                   <div className="flex items-center space-x-2">
-                    <User className="w-4 h-4 text-white" />
-                    <span className="text-white font-medium text-sm">{model.name}</span>
+                    <User className="w-3 h-3 text-white" />
+                    <span className="text-white font-medium text-xs">{model.name}</span>
                   </div>
                 </div>
               </div>

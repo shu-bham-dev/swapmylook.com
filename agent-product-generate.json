@@ -1,0 +1,916 @@
+{
+
+  "name": "AI Agent",
+
+  "nodes": [
+
+    {
+
+      "parameters": {
+
+        "formTitle": "@Algo.Bites",
+
+        "formDescription": "Launching a new product ? get studio level ad creative in minutess.",
+
+        "formFields": {
+
+          "values": [
+
+            {
+
+              "fieldLabel": "what is the products name?",
+
+              "requiredField": true
+
+            },
+
+            {
+
+              "fieldLabel": "What is  the product Tagline ?",
+
+              "requiredField": true
+
+            },
+
+            {
+
+              "fieldLabel": "Upload Product Image",
+
+              "fieldType": "file",
+
+              "multipleFiles": false,
+
+              "acceptFileTypes": ".png.jpg",
+
+              "requiredField": true
+
+            },
+
+            {
+
+              "fieldLabel": "What is the product Category ?",
+
+              "requiredField": true
+
+            },
+
+            {
+
+              "fieldLabel": "Highlighted Benefit ",
+
+              "requiredField": true
+
+            }
+
+          ]
+
+        },
+
+        "options": {}
+
+      },
+
+      "type": "n8n-nodes-base.formTrigger",
+
+      "typeVersion": 2.2,
+
+      "position": [
+
+        0,
+
+        0
+
+      ],
+
+      "id": "6df31b90-364d-4f0b-b6ca-ceaf308ea551",
+
+      "name": "AI post generater",
+
+      "webhookId": "83c613fd-4eb2-446d-8fb8-a8bbbb489ae0"
+
+    },
+
+    {
+
+      "parameters": {
+
+        "mode": "raw",
+
+        "jsonOutput": "{\n  \"brandName\": \"LUMISÉRA\",\n  \"brandTone\": \"Luxury skincare — clean, calm, and elegant.\",\n  \"colorTheme\": \"Deep sea blues, emerald greens, warm golds, and beige.\",\n  \"backgroundStyle\": \"Soft gradients or realistic textures like water, marble, or satin.\",\n  \"lightingStyle\": \"Always soft, diffused lighting with a subtle spotlight effect and gentle reflections.\",\n  \"productPlacement\": \"The product should feel grounded, not floating — placed on surfaces like trays, marble slabs, or fabric. Props like flower petals, ribbons, or boxes can be used sparingly.\",\n  \"typographyStyle\": \"Use serif fonts in uppercase for titles. For secondary text, use thin script or modern sans-serif. Font color should be white, soft gold, or dark green — never harsh.\",\n  \"compositionGuidelines\": \"Maintain clean symmetry or elegant off-center balance. Always leave intentional space around the product. Keep supporting elements minimal and refined.\"\n}",
+
+        "options": {}
+
+      },
+
+      "type": "n8n-nodes-base.set",
+
+      "typeVersion": 3.4,
+
+      "position": [
+
+        220,
+
+        0
+
+      ],
+
+      "id": "edd86395-3834-4d28-957e-5de1637c2430",
+
+      "name": "Edit Fields"
+
+    },
+
+    {
+
+      "parameters": {
+
+        "resource": "folder",
+
+        "name": "={{ $json.brandName }}",
+
+        "driveId": {
+
+          "__rl": true,
+
+          "value": "My Drive",
+
+          "mode": "list",
+
+          "cachedResultName": "My Drive",
+
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+
+        },
+
+        "folderId": {
+
+          "__rl": true,
+
+          "value": "1rfUXgOkSL41_iquAU3H-W1GTHZjcVGMU",
+
+          "mode": "id"
+
+        },
+
+        "options": {}
+
+      },
+
+      "type": "n8n-nodes-base.googleDrive",
+
+      "typeVersion": 3,
+
+      "position": [
+
+        420,
+
+        0
+
+      ],
+
+      "id": "58bae63c-f845-4322-8eb5-914ec0570c4f",
+
+      "name": "Google Drive",
+
+      "credentials": {
+
+        "googleDriveOAuth2Api": {
+
+          "id": "kcyS6di6x5CXe9NG",
+
+          "name": "Google Drive account 3"
+
+        }
+
+      }
+
+    },
+
+    {
+
+      "parameters": {
+
+        "promptType": "define",
+
+        "text": "={\n  \"brandName\": \"{{ $('Edit Fields').item.json.brandName }}\",\n  \"brandTone\": \"{{ $('Edit Fields').item.json.brandTone }}\",\n  \"colorTheme\": \"{{ $('Edit Fields').item.json.colorTheme }}\",\n  \"backgroundStyle\": \"{{ $('Edit Fields').item.json.backgroundStyle }}\",\n  \"lightingStyle\": \"{{ $('Edit Fields').item.json.lightingStyle }}\",\n  \"productPlacement\": \"{{ $('Edit Fields').item.json.productPlacement }}\",\n  \"typographyStyle\": \"{{ $('Edit Fields').item.json.typographyStyle }}\",\n  \"compositionGuidelines\": \"{{ $('Edit Fields').item.json.compositionGuidelines }} \"\n}",
+
+        "hasOutputParser": true,
+
+        "options": {
+
+          "systemMessage": ""
+
+        }
+
+      },
+
+      "type": "@n8n/n8n-nodes-langchain.agent",
+
+      "typeVersion": 2,
+
+      "position": [
+
+        660,
+
+        0
+
+      ],
+
+      "id": "84cc8383-5725-4e61-85b5-884cb5fe9e68",
+
+      "name": "AI Agent"
+
+    },
+
+    {
+
+      "parameters": {
+
+        "model": "openai/gpt-4o",
+
+        "options": {}
+
+      },
+
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+
+      "typeVersion": 1,
+
+      "position": [
+
+        560,
+
+        220
+
+      ],
+
+      "id": "9a9889a2-259d-4890-a384-02d7af2c15db",
+
+      "name": "OpenRouter Chat Model",
+
+      "credentials": {
+
+        "openRouterApi": {
+
+          "id": "QBATJuzqHANfuZCI",
+
+          "name": "OpenRouter account 3"
+
+        }
+
+      }
+
+    },
+
+    {
+
+      "parameters": {
+
+        "jsonSchemaExample": "{\n  \"assets\": [\n    {\n      \"assetType\": \"Instagram Post\",\n      \"backgroundTone\": \"soft blush gradient\",\n      \"surfaceType\": \"satin draped cloth\",\n      \"accentProp\": \"gold-trimmed ribbon\",\n      \"lighting\": \"warm spotlight from the side\",\n      \"cameraAngle\": \"45-degree angle\",\n      \"overlayText\": \"Glow deeper. Shine brighter.\"\n    },\n    {\n      \"assetType\": \"Instagram Story\",\n      \"backgroundTone\": \"pale lavender with light streaks\",\n      \"surfaceType\": \"textured ceramic tray\",\n      \"accentProp\": \"scattered rose petals\",\n      \"lighting\": \"top-down diffused glow\",\n      \"cameraAngle\": \"zoomed-in overhead view\",\n      \"overlayText\": \"Hydration you can feel. Right now.\"\n    },\n    {\n      \"assetType\": \"Website Banner\",\n      \"backgroundTone\": \"muted green stone texture\",\n      \"surfaceType\": \"brushed concrete slab\",\n      \"accentProp\": \"eucalyptus branch\",\n      \"lighting\": \"soft angled morning light\",\n      \"cameraAngle\": \"side-profile landscape\",\n      \"overlayText\": \"Glow like never before!\"\n    },\n    {\n      \"assetType\": \"Ad Creative\",\n      \"backgroundTone\": \"deep emerald with gradient fade\",\n      \"surfaceType\": \"reflective glass base\",\n      \"accentProp\": \"frosted crystal orb\",\n      \"lighting\": \"dramatic backlight\",\n      \"cameraAngle\": \"elevated 3/4 angle\",\n      \"overlayText\": \"10% Off Today Only\"\n    },\n    {\n      \"assetType\": \"Testimonial Graphic\",\n      \"backgroundTone\": \"cream linen with subtle shadows\",\n      \"surfaceType\": \"polished marble\",\n      \"accentProp\": \"single white tulip\",\n      \"lighting\": \"natural side lighting\",\n      \"cameraAngle\": \"clean straight-on view\",\n      \"overlayText\": \"My skin has never felt this good.\"\n    }\n  ]\n}"
+
+      },
+
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+
+      "typeVersion": 1.3,
+
+      "position": [
+
+        840,
+
+        220
+
+      ],
+
+      "id": "b0996c63-be5b-454c-8360-3ab3ef57213a",
+
+      "name": "Structured Output Parser"
+
+    },
+
+    {
+
+      "parameters": {
+
+        "jsCode": "// Loop over input items\nreturn items.map(item => {\n  return {\n    json: item.json,\n    binary: {\n      image: $node[\"AI post generater\"].binary[\"$('AI post generater').first().json['Upload Product Image']\"]\n    }\n  };\n});\n"
+
+      },
+
+      "type": "n8n-nodes-base.code",
+
+      "typeVersion": 2,
+
+      "position": [
+
+        1020,
+
+        0
+
+      ],
+
+      "id": "04641d46-3c89-4114-ab81-a91ae873562f",
+
+      "name": "Code"
+
+    },
+
+    {
+
+      "parameters": {
+
+        "rules": {
+
+          "values": [
+
+            {
+
+              "conditions": {
+
+                "options": {
+
+                  "caseSensitive": true,
+
+                  "leftValue": "",
+
+                  "typeValidation": "strict",
+
+                  "version": 2
+
+                },
+
+                "conditions": [
+
+                  {
+
+                    "leftValue": "={{ $json.output.assets[0].assetType }}",
+
+                    "rightValue": "Instagram post ",
+
+                    "operator": {
+
+                      "type": "string",
+
+                      "operation": "equals"
+
+                    },
+
+                    "id": "6c496d94-67a6-463c-bf55-f1e015c82dcf"
+
+                  }
+
+                ],
+
+                "combinator": "and"
+
+              },
+
+              "renameOutput": true,
+
+              "outputKey": "false"
+
+            },
+
+            {
+
+              "conditions": {
+
+                "options": {
+
+                  "caseSensitive": true,
+
+                  "leftValue": "",
+
+                  "typeValidation": "strict",
+
+                  "version": 2
+
+                },
+
+                "conditions": [
+
+                  {
+
+                    "id": "5e4a6462-7bdb-4549-8034-6d979fc3a287",
+
+                    "leftValue": "={{ $json.output.assets[1].assetType }}",
+
+                    "rightValue": "Instagram story ",
+
+                    "operator": {
+
+                      "type": "string",
+
+                      "operation": "equals",
+
+                      "name": "filter.operator.equals"
+
+                    }
+
+                  }
+
+                ],
+
+                "combinator": "and"
+
+              }
+
+            },
+
+            {
+
+              "conditions": {
+
+                "options": {
+
+                  "caseSensitive": true,
+
+                  "leftValue": "",
+
+                  "typeValidation": "strict",
+
+                  "version": 2
+
+                },
+
+                "conditions": [
+
+                  {
+
+                    "id": "197e5d94-ee69-46f1-94d1-7bbe39a95dad",
+
+                    "leftValue": "={{ $json.output.assets[2].assetType }}",
+
+                    "rightValue": "Website Banner",
+
+                    "operator": {
+
+                      "type": "string",
+
+                      "operation": "equals",
+
+                      "name": "filter.operator.equals"
+
+                    }
+
+                  }
+
+                ],
+
+                "combinator": "and"
+
+              }
+
+            },
+
+            {
+
+              "conditions": {
+
+                "options": {
+
+                  "caseSensitive": true,
+
+                  "leftValue": "",
+
+                  "typeValidation": "strict",
+
+                  "version": 2
+
+                },
+
+                "conditions": [
+
+                  {
+
+                    "id": "2e909439-e8ea-43be-9cd8-867f32a198fe",
+
+                    "leftValue": "={{ $json.output.assets[3].assetType }}",
+
+                    "rightValue": "Ad creative",
+
+                    "operator": {
+
+                      "type": "string",
+
+                      "operation": "equals",
+
+                      "name": "filter.operator.equals"
+
+                    }
+
+                  }
+
+                ],
+
+                "combinator": "and"
+
+              }
+
+            },
+
+            {
+
+              "conditions": {
+
+                "options": {
+
+                  "caseSensitive": true,
+
+                  "leftValue": "",
+
+                  "typeValidation": "strict",
+
+                  "version": 2
+
+                },
+
+                "conditions": [
+
+                  {
+
+                    "id": "e2ba6092-21ad-4455-a977-865d1f909b9a",
+
+                    "leftValue": "={{ $json.output.assets[4].assetType }}",
+
+                    "rightValue": "Testimonial Graphic",
+
+                    "operator": {
+
+                      "type": "string",
+
+                      "operation": "equals",
+
+                      "name": "filter.operator.equals"
+
+                    }
+
+                  }
+
+                ],
+
+                "combinator": "and"
+
+              }
+
+            }
+
+          ]
+
+        },
+
+        "options": {
+
+          "allMatchingOutputs": true
+
+        }
+
+      },
+
+      "type": "n8n-nodes-base.switch",
+
+      "typeVersion": 3.2,
+
+      "position": [
+
+        1240,
+
+        0
+
+      ],
+
+      "id": "75407427-b6fc-4fce-aa9f-c376736a2223",
+
+      "name": "Switch"
+
+    },
+
+    {
+
+      "parameters": {
+
+        "method": "POST",
+
+        "url": " https://openai.com/v1/images/edits",
+
+        "sendHeaders": true,
+
+        "headerParameters": {
+
+          "parameters": [
+
+            {
+
+              "name": "Authorization",
+
+              "value": "Bearer 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"
+
+            }
+
+          ]
+
+        },
+
+        "sendBody": true,
+
+        "bodyParameters": {
+
+          "parameters": [
+
+            {
+
+              "name": "Model",
+
+              "value": "gpt-image-1"
+
+            }
+
+          ]
+
+        },
+
+        "options": {}
+
+      },
+
+      "type": "n8n-nodes-base.httpRequest",
+
+      "typeVersion": 4.2,
+
+      "position": [
+
+        1540,
+
+        -40
+
+      ],
+
+      "id": "dcbfa04e-95ff-4d20-aa4c-d9a2058fb79d",
+
+      "name": "HTTP Request"
+
+    }
+
+  ],
+
+  "pinData": {},
+
+  "connections": {
+
+    "AI post generater": {
+
+      "main": [
+
+        [
+
+          {
+
+            "node": "Edit Fields",
+
+            "type": "main",
+
+            "index": 0
+
+          }
+
+        ]
+
+      ]
+
+    },
+
+    "Edit Fields": {
+
+      "main": [
+
+        [
+
+          {
+
+            "node": "Google Drive",
+
+            "type": "main",
+
+            "index": 0
+
+          }
+
+        ]
+
+      ]
+
+    },
+
+    "Google Drive": {
+
+      "main": [
+
+        [
+
+          {
+
+            "node": "AI Agent",
+
+            "type": "main",
+
+            "index": 0
+
+          }
+
+        ]
+
+      ]
+
+    },
+
+    "OpenRouter Chat Model": {
+
+      "ai_languageModel": [
+
+        [
+
+          {
+
+            "node": "AI Agent",
+
+            "type": "ai_languageModel",
+
+            "index": 0
+
+          }
+
+        ]
+
+      ]
+
+    },
+
+    "Structured Output Parser": {
+
+      "ai_outputParser": [
+
+        [
+
+          {
+
+            "node": "AI Agent",
+
+            "type": "ai_outputParser",
+
+            "index": 0
+
+          }
+
+        ]
+
+      ]
+
+    },
+
+    "AI Agent": {
+
+      "main": [
+
+        [
+
+          {
+
+            "node": "Code",
+
+            "type": "main",
+
+            "index": 0
+
+          }
+
+        ]
+
+      ]
+
+    },
+
+    "Code": {
+
+      "main": [
+
+        [
+
+          {
+
+            "node": "Switch",
+
+            "type": "main",
+
+            "index": 0
+
+          }
+
+        ]
+
+      ]
+
+    },
+
+    "Switch": {
+
+      "main": [
+
+        [
+
+          {
+
+            "node": "HTTP Request",
+
+            "type": "main",
+
+            "index": 0
+
+          }
+
+        ],
+
+        [
+
+          {
+
+            "node": "HTTP Request",
+
+            "type": "main",
+
+            "index": 0
+
+          }
+
+        ],
+
+        [
+
+          {
+
+            "node": "HTTP Request",
+
+            "type": "main",
+
+            "index": 0
+
+          }
+
+        ],
+
+        [
+
+          {
+
+            "node": "HTTP Request",
+
+            "type": "main",
+
+            "index": 0
+
+          }
+
+        ],
+
+        [
+
+          {
+
+            "node": "HTTP Request",
+
+            "type": "main",
+
+            "index": 0
+
+          }
+
+        ]
+
+      ]
+
+    }
+
+  },
+
+  "active": false,
+
+  "settings": {
+
+    "executionOrder": "v1"
+
+  },
+
+  "versionId": "48f47f17-4b10-4e07-9f43-48e9257e6391",
+
+  "meta": {
+
+    "templateCredsSetupCompleted": true,
+
+    "instanceId": "d5060035da1ac148c5b2d3ed9879dffa23154fe6976553f55ae65cc32f34ebe1"
+
+  },
+
+  "id": "8gpgsL7Aw3toLyCa",
+
+  "tags": []
+
+}
+

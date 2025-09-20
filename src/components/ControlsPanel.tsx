@@ -54,24 +54,6 @@ export function ControlsPanel({
 
   return (
     <div className="space-y-4">
-      {/* Progress Indicator */}
-      <Card className="p-4">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Your Progress</span>
-            <Badge variant="outline" className="text-pink-600 border-pink-200">
-              Step {currentStep} of {totalSteps}
-            </Badge>
-          </div>
-          <Progress value={progress} className="h-2" />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Select Model</span>
-            <span>Choose Outfit</span>
-            <span>Perfect Look</span>
-          </div>
-        </div>
-      </Card>
-
       {/* Main Controls */}
       <Card className="p-4">
         <h3 className="font-medium mb-3 flex items-center gap-2">
@@ -146,73 +128,6 @@ export function ControlsPanel({
                 Share
               </Button>
             </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* Recent History */}
-      <Card className="p-4">
-        <h3 className="font-medium mb-3 flex items-center gap-2">
-          <History className="w-4 h-4 text-pink-500" />
-          Recent Looks
-        </h3>
-        
-        <div className="space-y-2">
-          {[
-            { name: 'Summer Casual', time: '2 min ago', liked: true },
-            { name: 'Business Chic', time: '5 min ago', liked: false },
-            { name: 'Evening Glam', time: '10 min ago', liked: true },
-          ].map((look, index) => (
-            <div key={index} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center">
-                  <Camera className="w-4 h-4 text-pink-500" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{look.name}</p>
-                  <p className="text-xs text-muted-foreground">{look.time}</p>
-                </div>
-              </div>
-              <Heart className={`w-4 h-4 ${look.liked ? 'text-red-500 fill-red-500' : 'text-gray-400'}`} />
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Style Insights */}
-      <Card className="p-4 bg-gradient-to-br from-pink-50 to-purple-50 border-pink-200">
-        <h3 className="font-medium mb-3 flex items-center gap-2">
-          <Palette className="w-4 h-4 text-pink-500" />
-          Style Insights
-        </h3>
-        
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm">Your Style Score</span>
-            <div className="flex items-center gap-1">
-              <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-              <span className="text-sm font-medium">4.8</span>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs">
-              <span>Fashion Forward</span>
-              <span>92%</span>
-            </div>
-            <Progress value={92} className="h-1" />
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs">
-              <span>Color Harmony</span>
-              <span>88%</span>
-            </div>
-            <Progress value={88} className="h-1" />
-          </div>
-          
-          <div className="text-xs text-pink-600 bg-white/60 rounded-lg p-2 mt-3">
-            💡 Tip: Try adding accessories to complete your look!
           </div>
         </div>
       </Card>

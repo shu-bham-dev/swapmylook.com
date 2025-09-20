@@ -164,14 +164,22 @@ export default function App() {
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Mobile Single Screen Layout */}
-          <div className="lg:hidden space-y-4">
+          <div className="lg:hidden space-y-3">
             {/* Model Selection */}
-            <Card className="p-4">
-              <ModelSelection 
+            <Card className="p-3">
+              <ModelSelection
                 onModelSelect={setSelectedModel}
                 selectedModel={selectedModel}
+              />
+            </Card>
+
+            {/* Outfit Library */}
+            <Card className="p-3">
+              <OutfitLibrary
+                onOutfitSelect={handleOutfitSelect}
+                selectedOutfit={selectedOutfit}
               />
             </Card>
 
@@ -182,25 +190,17 @@ export default function App() {
               isLoading={isLoading}
             />
 
-            {/* Outfit Library */}
-            <Card className="p-4">
-              <OutfitLibrary
-                onOutfitSelect={handleOutfitSelect}
-                selectedOutfit={selectedOutfit}
-              />
-            </Card>
-
             {/* Quick Controls */}
-            <Card className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-medium">Quick Actions</h3>
+            <Card className="p-3">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium text-sm">Quick Actions</h3>
                 <div className="flex space-x-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={handleUndo}
                     disabled={!canUndo}
-                    className="text-gray-600"
+                    className="text-gray-600 text-xs"
                   >
                     Undo
                   </Button>
@@ -209,25 +209,25 @@ export default function App() {
                     size="sm"
                     onClick={handleRedo}
                     disabled={!canRedo}
-                    className="text-gray-600"
+                    className="text-gray-600 text-xs"
                   >
                     Redo
                   </Button>
                 </div>
               </div>
-              <Separator className="mb-4" />
+              <Separator className="mb-3" />
               <div className="grid grid-cols-3 gap-2">
-                <Button variant="outline" size="sm">Save</Button>
-                <Button variant="outline" size="sm">Download</Button>
-                <Button variant="outline" size="sm">Share</Button>
+                <Button variant="outline" size="sm" className="text-xs">Save</Button>
+                <Button variant="outline" size="sm" className="text-xs">Download</Button>
+                <Button variant="outline" size="sm" className="text-xs">Share</Button>
               </div>
             </Card>
           </div>
 
-          {/* Desktop Layout */}
+          {/* Desktop Layout - First Row */}
           <div className="hidden lg:block">
-            <Card className="p-6">
-              <ModelSelection 
+            <Card className="p-6 h-[calc(100vh-8rem)]">
+              <ModelSelection
                 onModelSelect={setSelectedModel}
                 selectedModel={selectedModel}
               />
@@ -244,52 +244,34 @@ export default function App() {
           </div>
 
           {/* Preview Canvas - Desktop only (mobile has it in the single column) */}
-          <div className="hidden lg:block lg:col-span-1">
-            <PreviewCanvas
-              model={selectedModel}
-              outfit={selectedOutfit}
-              isLoading={isLoading}
-            />
+          <div className="hidden lg:block">
+            <div className="h-[calc(100vh-8rem)]">
+              <PreviewCanvas
+                model={selectedModel}
+                outfit={selectedOutfit}
+                isLoading={isLoading}
+              />
+            </div>
           </div>
 
-          <div className="hidden lg:block">
-            <ControlsPanel
-              onUndo={handleUndo}
-              onRedo={handleRedo}
-              canUndo={canUndo}
-              canRedo={canRedo}
-              currentStep={getCurrentStep()}
-              totalSteps={3}
-            />
-          </div>
+          {/* Controls Panel - Second Row (only show when outfit is selected) */}
+          {selectedOutfit && (
+            <div className="hidden lg:block lg:col-span-3">
+              <ControlsPanel
+                onUndo={handleUndo}
+                onRedo={handleRedo}
+                canUndo={canUndo}
+                canRedo={canRedo}
+                currentStep={getCurrentStep()}
+                totalSteps={3}
+              />
+            </div>
+          )}
         </div>
 
         {/* Mobile Preview Controls */}
         {/* Removed since controls are now integrated above */}
 
-        {/* Fashion Tips */}
-        {selectedModel && selectedOutfit && (
-          <div className="mt-6">
-            <Card className="p-4 bg-gradient-to-r from-pink-50 to-purple-50 border-pink-200">
-              <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="w-4 h-4 text-pink-500" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-pink-800 mb-1">Style Tip</h4>
-                  <p className="text-sm text-pink-700">
-                    {selectedOutfit.category === 'formal' 
-                      ? "This elegant look pairs beautifully with statement jewelry and classic heels."
-                      : selectedOutfit.category === 'casual'
-                      ? "Perfect for weekend adventures! Try adding a denim jacket for layering."
-                      : "This versatile piece can be dressed up or down depending on your accessories."
-                    }
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </div>
-        )}
       </main>
 
     </div>

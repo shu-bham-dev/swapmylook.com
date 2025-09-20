@@ -342,15 +342,6 @@ export function ProfilePage({ onPageChange }: ProfilePageProps) {
                   </div>
                   <Progress value={65} className="h-2" />
 
-                  <div className="mt-6 p-3 bg-pink-50 rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <Star className="w-4 h-4 text-pink-500" />
-                      <span className="text-sm font-medium text-pink-700">Style Tip</span>
-                    </div>
-                    <p className="text-sm text-pink-600 mt-1">
-                      Try experimenting with bold patterns to boost your trend awareness!
-                    </p>
-                  </div>
                 </div>
               </Card>
             </div>

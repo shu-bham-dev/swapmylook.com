@@ -64,18 +64,6 @@ const outfits: Outfit[] = [
     liked: false
   },
   {
-    id: '4',
-    name: 'Business Power',
-    image: 'https://images.unsplash.com/photo-1594736797933-d0401ba2fe65?w=400&h=500&fit=crop',
-    category: 'business',
-    tags: ['professional', 'sharp', 'confident'],
-    style: 'Corporate',
-    season: 'All Season',
-    color: 'Gray',
-    rating: 4.6,
-    liked: false
-  },
-  {
     id: '5',
     name: 'Weekend Vibes',
     image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&h=500&fit=crop',
@@ -189,10 +177,6 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit }: OutfitLibraryP
       <div className="flex-shrink-0 space-y-4 pb-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Outfit Library</h2>
-          <Button variant="outline" size="sm" className="text-pink-600 border-pink-200">
-            <Filter className="w-4 h-4 mr-2" />
-            Filter
-          </Button>
         </div>
 
         {/* Upload Section */}
@@ -264,7 +248,7 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit }: OutfitLibraryP
 
       {/* Outfit Grid - Scrollable */}
       <div className="flex-1 overflow-y-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 pb-4">
+        <div className="grid grid-cols-2 gap-2 pb-4">
           {filteredOutfits.map((outfit) => (
             <Card
               key={outfit.id}
