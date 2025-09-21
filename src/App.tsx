@@ -320,8 +320,11 @@ export default function App() {
         </div>
       </section>
 
+      {/* Spacer between sections */}
+      <div className="h-12"></div>
+
       {/* Customize and Design Your Own Outfit With AI Section */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24 bg-gray-50 mt-12">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24 bg-gray-50">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent mb-4">
             Customize and Design Your Own Outfit With AI
@@ -375,6 +378,9 @@ export default function App() {
           </Card>
         </div>
       </section>
+
+      {/* Spacer between sections */}
+      <div className="h-12"></div>
 
       {/* FAQ Section */}
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
