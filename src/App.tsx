@@ -9,6 +9,7 @@ import { Button } from './components/ui/button';
 import { Card } from './components/ui/card';
 import { Separator } from './components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './components/ui/accordion';
 import { Sparkles, Menu, X } from 'lucide-react';
 
 // Lazy load page components with proper typing
@@ -163,7 +164,7 @@ export default function App() {
   const renderHomePage = () => (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Mobile Single Screen Layout */}
           <div className="lg:hidden space-y-3">
@@ -273,6 +274,157 @@ export default function App() {
         {/* Removed since controls are now integrated above */}
 
       </main>
+
+      {/* How to Change Clothes in Photos with AI Section */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent mb-4">
+            How to Change Clothes in Photos with AI
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Transform your photos instantly with our powerful AI outfit changer technology.
+            No technical skills needed - just follow these simple steps!
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <Card className="p-6 text-center hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl font-bold text-pink-600">1</span>
+            </div>
+            <h3 className="text-xl font-semibold mb-3">Upload Your Photo</h3>
+            <p className="text-muted-foreground">
+              Start with a clear, well-lit photo. Our AI outfit changer works best with front-facing photos where you're clearly visible.
+            </p>
+          </Card>
+
+          <Card className="p-6 text-center hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl font-bold text-purple-600">2</span>
+            </div>
+            <h3 className="text-xl font-semibold mb-3">Choose Your Outfit</h3>
+            <p className="text-muted-foreground">
+              Browse our extensive library of outfits and styles. From casual to formal, find the perfect look for any occasion.
+            </p>
+          </Card>
+
+          <Card className="p-6 text-center hover:shadow-md transition-shadow">
+            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl font-bold text-blue-600">3</span>
+            </div>
+            <h3 className="text-xl font-semibold mb-3">See the Magic</h3>
+            <p className="text-muted-foreground">
+              Watch as our AI automatically applies the outfit with perfect fit and realistic lighting. Results in seconds!
+            </p>
+          </Card>
+        </div>
+      </section>
+
+      {/* Customize and Design Your Own Outfit With AI Section */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-24 bg-gray-50 mt-12">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent mb-4">
+            Customize and Design Your Own Outfit With AI
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Create unique fashion designs and see instant transformations with our AI-powered customization tools.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+            <img
+              src="/assests/images/acc-what1.jpeg"
+              alt="AI outfit transformation example"
+              className="w-full h-48 object-cover"
+            />
+            <div className="p-6">
+              <h3 className="font-semibold mb-2">Casual to Formal Magic</h3>
+              <p className="text-sm text-muted-foreground">
+                See how our AI can transform everyday looks into elegant formal wear instantly.
+              </p>
+            </div>
+          </Card>
+
+          <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+            <img
+              src="/assests/images/acc-what2.webp"
+              alt="AI color transformation example"
+              className="w-full h-48 object-cover"
+            />
+            <div className="p-6">
+              <h3 className="font-semibold mb-2">Color Transformation</h3>
+              <p className="text-sm text-muted-foreground">
+                Experiment with different color schemes and see complete style makeovers.
+              </p>
+            </div>
+          </Card>
+
+          <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+            <img
+              src="/assests/images/acc-what3.webp"
+              alt="AI seasonal style transformation"
+              className="w-full h-48 object-cover"
+            />
+            <div className="p-6">
+              <h3 className="font-semibold mb-2">Seasonal Style Switch</h3>
+              <p className="text-sm text-muted-foreground">
+                Adapt your outfits to different seasons and occasions with AI magic.
+              </p>
+            </div>
+          </Card>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent mb-3">
+            Frequently Asked Questions
+          </h2>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            Get answers to common questions about our AI outfit changer technology.
+          </p>
+        </div>
+
+        <Accordion type="single" collapsible className="w-full">
+          <AccordionItem value="item-1">
+            <AccordionTrigger className="text-left font-semibold">
+              How does AI change clothes in photos?
+            </AccordionTrigger>
+            <AccordionContent className="text-muted-foreground">
+              Our AI uses advanced computer vision to analyze your photo and seamlessly overlay selected outfits while maintaining realistic proportions and natural appearance.
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="item-2">
+            <AccordionTrigger className="text-left font-semibold">
+              Is the AI outfit changer free to use?
+            </AccordionTrigger>
+            <AccordionContent className="text-muted-foreground">
+              Yes! We offer free access with 5 credits per month. You can try our technology and see the magic for yourself without any cost.
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="item-3">
+            <AccordionTrigger className="text-left font-semibold">
+              How accurate are the outfit visualizations?
+            </AccordionTrigger>
+            <AccordionContent className="text-muted-foreground">
+              Our AI achieves 95% accuracy in outfit placement, color matching, and realistic rendering. The visualizations account for body proportions and lighting conditions.
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="item-4">
+            <AccordionTrigger className="text-left font-semibold">
+              Can I customize colors and styles?
+            </AccordionTrigger>
+            <AccordionContent className="text-muted-foreground">
+              Absolutely! You can modify any aspect of your outfits - change colors, adjust fit, alter styles, and create completely original designs.
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </section>
 
     </div>
   );

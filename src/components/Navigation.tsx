@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Button } from './ui/button';
-import { 
-  Sparkles, 
-  Menu, 
-  X, 
-  User, 
-  Settings, 
-  CreditCard, 
-  HelpCircle, 
+import {
+  Sparkles,
+  Menu,
+  X,
+  User,
+  Settings,
+  CreditCard,
+  HelpCircle,
   LogOut,
   Heart
 } from 'lucide-react';
