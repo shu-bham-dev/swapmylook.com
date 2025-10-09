@@ -11,6 +11,7 @@ import { Separator } from './components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './components/ui/accordion';
 import { Sparkles, Menu, X } from 'lucide-react';
+import { apiService } from './services/api';
 
 // Lazy load page components with proper typing
 const LoginPage = lazy(() => import('./components/pages/LoginPage').then(module => ({ default: module.LoginPage })));
@@ -43,11 +44,45 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [history, setHistory] = useState<Array<{ model: Model | null; outfit: Outfit | null }>>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
+  const [jobStatus, setJobStatus] = useState<'queued' | 'processing' | 'succeeded' | 'failed' | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
 
+  // Initialize authentication on app start
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        // Check if we have a valid token
+        if (apiService.isAuthenticated()) {
+          // Verify token is still valid
+          await apiService.getCurrentUser();
+          setIsLoggedIn(true);
+        } else {
+          // Auto-login with demo account for testing
+          await apiService.demoAuth();
+          setIsLoggedIn(true);
+        }
+      } catch (error) {
+        console.error('Authentication initialization failed:', error);
+        // Clear invalid token
+        apiService.clearAuthToken();
+        setIsLoggedIn(false);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    initializeAuth();
+  }, []);
 
   // Handle login
-  const handleLogin = () => {
-    setIsLoggedIn(true);
+  const handleLogin = async () => {
+    try {
+      await apiService.demoAuth();
+      setIsLoggedIn(true);
+    } catch (error) {
+      console.error('Login failed:', error);
+    }
   };
 
   // Handle logout (when navigating to login page while logged in)
@@ -69,22 +104,69 @@ export default function App() {
     return 3;
   };
 
-  // Handle outfit selection with loading simulation
-  const handleOutfitSelect = (outfit: Outfit) => {
+  // Handle outfit selection with actual API call
+  const handleOutfitSelect = async (outfit: Outfit) => {
     if (!selectedModel) return;
     
     setIsLoading(true);
+    setJobStatus('queued');
     
-    // Add to history
-    const newHistoryEntry = { model: selectedModel, outfit };
-    setHistory(prev => [...prev.slice(0, historyIndex + 1), newHistoryEntry]);
-    setHistoryIndex(prev => prev + 1);
-    
-    // Simulate AI processing time
-    setTimeout(() => {
-      setSelectedOutfit(outfit);
-      setIsLoading(false);
-    }, 1500);
+    try {
+      // Add to history
+      const newHistoryEntry = { model: selectedModel, outfit };
+      setHistory(prev => [...prev.slice(0, historyIndex + 1), newHistoryEntry]);
+      setHistoryIndex(prev => prev + 1);
+      
+      // Create generation job with default prompt
+      const job = await apiService.createGenerationJob(
+        selectedModel.id,
+        outfit.id
+      );
+      
+      setCurrentJobId(job.jobId);
+      setJobStatus(job.status);
+      
+      // Poll for job status
+      const pollJobStatus = async () => {
+        try {
+          const status = await apiService.getJobStatus(job.jobId);
+          setJobStatus(status.status);
+          
+          if (status.status === 'succeeded' && status.outputImage) {
+            // Update the outfit with the generated image
+            const updatedOutfit = {
+              ...outfit,
+              image: status.outputImage.url
+            };
+            setSelectedOutfit(updatedOutfit);
+            setIsLoading(false);
+            console.log('✅ AI Generated image updated:', status.outputImage.url);
+          } else if (status.status === 'failed') {
+            console.error('Generation failed:', status.error);
+            setSelectedOutfit(outfit);
+            setIsLoading(false);
+          } else if (status.status === 'processing' || status.status === 'queued') {
+            // Continue polling
+            setTimeout(pollJobStatus, 2000);
+          }
+        } catch (error) {
+          console.error('Error polling job status:', error);
+          setSelectedOutfit(outfit);
+          setIsLoading(false);
+        }
+      };
+      
+      // Start polling
+      setTimeout(pollJobStatus, 2000);
+      
+    } catch (error) {
+      console.error('Error creating generation job:', error);
+      // Fallback to simulation if API fails
+      setTimeout(() => {
+        setSelectedOutfit(outfit);
+        setIsLoading(false);
+      }, 1500);
+    }
   };
 
   // History management
@@ -189,6 +271,7 @@ export default function App() {
               model={selectedModel}
               outfit={selectedOutfit}
               isLoading={isLoading}
+              jobStatus={jobStatus}
             />
 
             {/* Quick Controls */}
@@ -251,6 +334,7 @@ export default function App() {
                 model={selectedModel}
                 outfit={selectedOutfit}
                 isLoading={isLoading}
+                jobStatus={jobStatus}
               />
             </div>
           </div>
@@ -435,6 +519,29 @@ export default function App() {
     </div>
   );
 
+  // Handle logout
+  const handleLogout = () => {
+    apiService.clearAuthToken();
+    setIsLoggedIn(false);
+    setSelectedModel(null);
+    setSelectedOutfit(null);
+    setHistory([]);
+    setHistoryIndex(-1);
+    setCurrentPage('home');
+  };
+
+  // Show loading while initializing
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-white to-purple-50">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto"></div>
+          <p className="text-muted-foreground">Initializing...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen">
       {/* SEO for current page */}
@@ -453,6 +560,7 @@ export default function App() {
           onPageChange={handlePageChange}
           isLoggedIn={isLoggedIn}
           userCredits={25}
+          onLogout={handleLogout}
         />
       )}
       

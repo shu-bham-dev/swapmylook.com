@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Upload, User } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { apiService } from '../services/api';
 
 interface Model {
   id: string;
@@ -39,23 +40,64 @@ const predefinedModels: Model[] = [
 
 export function ModelSelection({ onModelSelect, selectedModel }: ModelSelectionProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadedModel, setUploadedModel] = useState<Model | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Check if the selected model is an uploaded one
+  const isUploadedModelSelected = selectedModel && uploadedModel && selectedModel.id === uploadedModel.id;
+
+  const handleButtonClick = () => {
+    if (fileInputRef.current && !isUploading) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setIsUploading(true);
-      // Simulate upload process
-      setTimeout(() => {
-        const uploadedModel: Model = {
-          id: 'uploaded',
+      
+      try {
+        // Upload file to backend using the API service
+        const data = await apiService.uploadFile(file, 'model');
+        
+        // Create model object with the uploaded image
+        const newUploadedModel: Model = {
+          id: data.imageAsset.id,
+          name: 'Your Model',
+          image: data.imageAsset.url,
+          category: 'diverse'
+        };
+        
+        setUploadedModel(newUploadedModel);
+        onModelSelect(newUploadedModel);
+        
+      } catch (error) {
+        console.error('Upload failed:', error);
+        // Fallback to simulation if API fails
+        const newUploadedModel: Model = {
+          id: `uploaded-${Date.now()}`,
           name: 'Your Model',
           image: URL.createObjectURL(file),
           category: 'diverse'
         };
-        onModelSelect(uploadedModel);
+        setUploadedModel(newUploadedModel);
+        onModelSelect(newUploadedModel);
+      } finally {
         setIsUploading(false);
-      }, 1500);
+      }
     }
+  };
+
+  const handleSelectUploadedModel = () => {
+    if (uploadedModel) {
+      onModelSelect(uploadedModel);
+    }
+  };
+
+  const handleRemoveUploadedModel = () => {
+    setUploadedModel(null);
+    onModelSelect(null);
   };
 
   return (
@@ -69,42 +111,81 @@ export function ModelSelection({ onModelSelect, selectedModel }: ModelSelectionP
         </p>
       </div>
 
-      {/* Upload Option */}
-      <Card className="border-2 border-dashed border-pink-200 hover:border-pink-300 transition-colors p-4 text-center bg-gradient-to-br from-pink-50 to-purple-50">
-        <div className="space-y-3">
-          <div className="mx-auto w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center">
-            {isUploading ? (
-              <div className="animate-spin w-4 h-4 border-2 border-pink-500 border-t-transparent rounded-full" />
-            ) : (
-              <Upload className="w-4 h-4 text-pink-500" />
-            )}
+      {/* Upload Option or Preview */}
+      {uploadedModel ? (
+        <Card className="border-2 border-pink-300 transition-colors p-4 bg-gradient-to-br from-pink-50 to-purple-50">
+          <div className="space-y-3">
+            <div className="text-center">
+              <h3 className="font-medium text-gray-900 text-sm mb-2">Your Uploaded Model</h3>
+              <div className="aspect-[3/4] relative rounded-lg overflow-hidden mx-auto max-w-32">
+                <ImageWithFallback
+                  src={uploadedModel.image}
+                  alt={uploadedModel.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="flex space-x-2 mt-3 justify-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={`border-pink-300 text-pink-600 hover:bg-pink-50 text-xs ${
+                    isUploadedModelSelected ? 'bg-pink-100' : ''
+                  }`}
+                  onClick={handleSelectUploadedModel}
+                >
+                  {isUploadedModelSelected ? 'Selected ✓' : 'Select'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-gray-300 text-gray-600 hover:bg-gray-50 text-xs"
+                  onClick={handleRemoveUploadedModel}
+                >
+                  Remove
+                </Button>
+              </div>
+            </div>
           </div>
-          <div className="space-y-1">
-            <h3 className="font-medium text-gray-900 text-sm">Upload Your Photo</h3>
-            <p className="text-xs text-muted-foreground">
-              {isUploading ? 'Processing...' : 'JPG, PNG up to 10MB'}
-            </p>
+        </Card>
+      ) : (
+        <Card className="border-2 border-dashed border-pink-200 hover:border-pink-300 transition-colors p-4 text-center bg-gradient-to-br from-pink-50 to-purple-50">
+          <div className="space-y-3">
+            <div className="mx-auto w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center">
+              {isUploading ? (
+                <div className="animate-spin w-4 h-4 border-2 border-pink-500 border-t-transparent rounded-full" />
+              ) : (
+                <Upload className="w-4 h-4 text-pink-500" />
+              )}
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-medium text-gray-900 text-sm">Upload Your Photo</h3>
+              <p className="text-xs text-muted-foreground">
+                {isUploading ? 'Processing...' : 'JPG, PNG up to 10MB'}
+              </p>
+            </div>
+            <div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-pink-300 text-pink-600 hover:bg-pink-50 text-xs cursor-pointer"
+                disabled={isUploading}
+                onClick={handleButtonClick}
+              >
+                {isUploading ? 'Uploading...' : 'Choose File'}
+              </Button>
+              <input
+                ref={fileInputRef}
+                id="model-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+                disabled={isUploading}
+              />
+            </div>
           </div>
-          <label htmlFor="model-upload" className="cursor-pointer">
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-pink-300 text-pink-600 hover:bg-pink-50 text-xs"
-              disabled={isUploading}
-            >
-              {isUploading ? 'Uploading...' : 'Choose File'}
-            </Button>
-            <input
-              id="model-upload"
-              type="file"
-              accept="image/*"
-              onChange={handleFileUpload}
-              className="hidden"
-              disabled={isUploading}
-            />
-          </label>
-        </div>
-      </Card>
+        </Card>
+      )}
 
       {/* Predefined Models */}
       <div className="space-y-4">

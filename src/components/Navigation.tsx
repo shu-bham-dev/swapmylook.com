@@ -24,11 +24,12 @@ import { Badge } from './ui/badge';
 interface NavigationProps {
   currentPage: string;
   onPageChange: (page: string) => void;
+  onLogout?: () => void;
   isLoggedIn?: boolean;
   userCredits?: number;
 }
 
-export function Navigation({ currentPage, onPageChange, isLoggedIn = false, userCredits = 25 }: NavigationProps) {
+export function Navigation({ currentPage, onPageChange, onLogout, isLoggedIn = false, userCredits = 25 }: NavigationProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navigationItems = [
@@ -118,7 +119,13 @@ export function Navigation({ currentPage, onPageChange, isLoggedIn = false, user
                       </DropdownMenuItem>
                     ))}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => onPageChange('login')}>
+                    <DropdownMenuItem onClick={() => {
+                      if (onLogout) {
+                        onLogout();
+                      } else {
+                        onPageChange('login');
+                      }
+                    }}>
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Log out</span>
                     </DropdownMenuItem>
@@ -205,7 +212,11 @@ export function Navigation({ currentPage, onPageChange, isLoggedIn = false, user
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      onPageChange('login');
+                      if (onLogout) {
+                        onLogout();
+                      } else {
+                        onPageChange('login');
+                      }
                       setIsMobileMenuOpen(false);
                     }}
                     className="w-full justify-start text-gray-600"

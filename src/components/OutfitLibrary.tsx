@@ -6,6 +6,7 @@ import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Search, Filter, Heart, Star, Upload, Plus, X } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { apiService } from '../services/api';
 
 export interface Outfit {
   id: string;
@@ -95,7 +96,11 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit }: OutfitLibraryP
   const [likedOutfits, setLikedOutfits] = useState<Set<string>>(new Set(['2', '5']));
   const [customOutfits, setCustomOutfits] = useState<Outfit[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadedOutfit, setUploadedOutfit] = useState<Outfit | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check if the selected outfit is an uploaded one
+  const isUploadedOutfitSelected = selectedOutfit && uploadedOutfit && selectedOutfit.id === uploadedOutfit.id;
 
   const allOutfits = [...outfits, ...customOutfits];
 
@@ -127,13 +132,35 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit }: OutfitLibraryP
     });
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setIsUploading(true);
       
-      // Simulate upload process
-      setTimeout(() => {
+      try {
+        // Upload file to backend using the API service
+        const data = await apiService.uploadFile(file, 'outfit');
+        
+        const newOutfit: Outfit = {
+          id: data.imageAsset.id,
+          name: `Custom Outfit ${customOutfits.length + 1}`,
+          image: data.imageAsset.url,
+          category: 'casual',
+          tags: ['custom', 'uploaded'],
+          style: 'Custom',
+          season: 'All Season',
+          color: 'Various',
+          rating: 5.0,
+          liked: false,
+          isCustom: true
+        };
+
+        setUploadedOutfit(newOutfit);
+        setCustomOutfits(prev => [...prev, newOutfit]);
+        
+      } catch (error) {
+        console.error('Upload failed:', error);
+        // Fallback to local URL if upload fails
         const imageUrl = URL.createObjectURL(file);
         
         const newOutfit: Outfit = {
@@ -150,15 +177,27 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit }: OutfitLibraryP
           isCustom: true
         };
 
+        setUploadedOutfit(newOutfit);
         setCustomOutfits(prev => [...prev, newOutfit]);
+      } finally {
         setIsUploading(false);
         
         // Clear the input
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
-      }, 1500);
+      }
     }
+  };
+
+  const handleSelectUploadedOutfit = () => {
+    if (uploadedOutfit) {
+      onOutfitSelect(uploadedOutfit);
+    }
+  };
+
+  const handleRemoveUploadedOutfit = () => {
+    setUploadedOutfit(null);
   };
 
   const removeCustomOutfit = (outfitId: string, e: React.MouseEvent) => {
@@ -179,42 +218,79 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit }: OutfitLibraryP
           <h2 className="text-xl font-semibold">Outfit Library</h2>
         </div>
 
-        {/* Upload Section */}
-        <Card className="border-2 border-dashed border-pink-200 hover:border-pink-300 transition-colors p-4 text-center bg-gradient-to-br from-pink-50 to-purple-50">
-          <div className="space-y-3">
-            <div className="mx-auto w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center">
-              {isUploading ? (
-                <div className="animate-spin w-5 h-5 border-2 border-pink-500 border-t-transparent rounded-full" />
-              ) : (
-                <Upload className="w-5 h-5 text-pink-500" />
-              )}
+        {/* Upload Section or Preview */}
+        {uploadedOutfit ? (
+          <Card className="border-2 border-pink-300 transition-colors p-4 bg-gradient-to-br from-pink-50 to-purple-50">
+            <div className="space-y-3">
+              <div className="text-center">
+                <h3 className="font-medium text-gray-900 mb-2">Your Uploaded Outfit</h3>
+                <div className="aspect-[3/4] relative rounded-lg overflow-hidden mx-auto max-w-32">
+                  <ImageWithFallback
+                    src={uploadedOutfit.image}
+                    alt={uploadedOutfit.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex space-x-2 mt-3 justify-center">
+                  <Button
+                    size="sm"
+                    className={`bg-pink-500 hover:bg-pink-600 text-white ${
+                      isUploadedOutfitSelected ? 'bg-green-600 hover:bg-green-700' : ''
+                    }`}
+                    onClick={handleSelectUploadedOutfit}
+                  >
+                    {isUploadedOutfitSelected ? 'Selected ✓' : 'Select'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                    onClick={handleRemoveUploadedOutfit}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              </div>
             </div>
-            <div className="space-y-1">
-              <h3 className="font-medium text-gray-900">Upload Custom Outfit</h3>
-              <p className="text-xs text-muted-foreground">
-                {isUploading ? 'Processing your outfit...' : 'JPG, PNG up to 10MB'}
-              </p>
+          </Card>
+        ) : (
+          <Card className="border-2 border-dashed border-pink-200 hover:border-pink-300 transition-colors p-4 text-center bg-gradient-to-br from-pink-50 to-purple-50">
+            <div className="space-y-3">
+              <div className="mx-auto w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center">
+                {isUploading ? (
+                  <div className="animate-spin w-5 h-5 border-2 border-pink-500 border-t-transparent rounded-full" />
+                ) : (
+                  <Upload className="w-5 h-5 text-pink-500" />
+                )}
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-medium text-gray-900">Upload Custom Outfit</h3>
+                <p className="text-xs text-muted-foreground">
+                  {isUploading ? 'Processing your outfit...' : 'JPG, PNG up to 10MB'}
+                </p>
+              </div>
+              <div>
+                <Button
+                  size="sm"
+                  className="bg-pink-500 hover:bg-pink-600 text-white cursor-pointer"
+                  disabled={isUploading}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {isUploading ? 'Uploading...' : 'Choose File'}
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  id="outfit-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  disabled={isUploading}
+                />
+              </div>
             </div>
-            <label htmlFor="outfit-upload" className="cursor-pointer">
-              <Button 
-                size="sm"
-                className="bg-pink-500 hover:bg-pink-600 text-white"
-                disabled={isUploading}
-              >
-                {isUploading ? 'Uploading...' : 'Choose File'}
-              </Button>
-              <input
-                ref={fileInputRef}
-                id="outfit-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleFileUpload}
-                className="hidden"
-                disabled={isUploading}
-              />
-            </label>
-          </div>
-        </Card>
+          </Card>
+        )}
 
         {/* Search */}
         <div className="relative">
