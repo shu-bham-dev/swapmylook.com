@@ -210,6 +210,85 @@ class ApiService {
   }
 
   /**
+   * Get user's outfits (models, outfits, and AI-generated images)
+   */
+  async getOutfits(params?: {
+    type?: 'model' | 'outfit' | 'output' | 'all';
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: string;
+    favorite?: boolean;
+  }): Promise<{
+    outfits: any[];
+    pagination: any;
+    filters: any;
+  }> {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryParams.append(key, value.toString());
+        }
+      });
+    }
+    
+    const endpoint = queryParams.toString() ? `/outfits?${queryParams}` : '/outfits';
+    return this.request(endpoint);
+  }
+
+  /**
+   * Get user's outfits statistics
+   */
+  async getOutfitsStats(): Promise<{
+    total: number;
+    byType: {
+      model: number;
+      outfit: number;
+      output: number;
+    };
+    storageUsage: {
+      totalBytes: number;
+      totalFiles: number;
+      byType: any;
+    };
+    favorites: number;
+  }> {
+    return this.request('/outfits/stats');
+  }
+
+  /**
+   * Toggle favorite status for an outfit
+   */
+  async toggleOutfitFavorite(outfitId: string, favorite: boolean): Promise<{
+    message: string;
+    image: {
+      id: string;
+      favorite: boolean;
+    };
+  }> {
+    return this.request(`/outfits/${outfitId}/favorite`, {
+      method: 'POST',
+      body: JSON.stringify({ favorite }),
+    });
+  }
+
+  /**
+   * Delete an outfit (soft delete)
+   */
+  async deleteOutfit(outfitId: string): Promise<{
+    message: string;
+    image: {
+      id: string;
+      isDeleted: boolean;
+    };
+  }> {
+    return this.request(`/outfits/${outfitId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  /**
    * Upload a file directly
    */
   async uploadFile(file: File, purpose: 'model' | 'outfit'): Promise<{

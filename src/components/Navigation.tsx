@@ -9,7 +9,8 @@ import {
   CreditCard,
   HelpCircle,
   LogOut,
-  Heart
+  Heart,
+  Shirt
 } from 'lucide-react';
 import { 
   DropdownMenu,
@@ -34,6 +35,7 @@ export function Navigation({ currentPage, onPageChange, onLogout, isLoggedIn = f
 
   const navigationItems = [
     { id: 'home', label: 'Style Studio', icon: Sparkles },
+    ...(isLoggedIn ? [{ id: 'outfits', label: 'My Outfits', icon: Shirt }] : []),
     { id: 'help', label: 'Help', icon: HelpCircle },
     { id: 'about', label: 'About', icon: Heart },
   ];

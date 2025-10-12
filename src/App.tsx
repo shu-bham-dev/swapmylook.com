@@ -16,6 +16,7 @@ import { apiService } from './services/api';
 // Lazy load page components with proper typing
 const LoginPage = lazy(() => import('./components/pages/LoginPage').then(module => ({ default: module.LoginPage })));
 const ProfilePage = lazy(() => import('./components/pages/ProfilePage').then(module => ({ default: module.ProfilePage })));
+const MyOutfitsPage = lazy(() => import('./components/pages/MyOutfitsPage').then(module => ({ default: module.MyOutfitsPage })));
 const SubscriptionPage = lazy(() => import('./components/pages/SubscriptionPage').then(module => ({ default: module.SubscriptionPage })));
 const HelpPage = lazy(() => import('./components/pages/HelpPage').then(module => ({ default: module.HelpPage })));
 const ContactPage = lazy(() => import('./components/pages/ContactPage').then(module => ({ default: module.ContactPage })));
@@ -204,6 +205,12 @@ export default function App() {
         return (
           <Suspense fallback={<LoadingFallback />}>
             <ProfilePage onPageChange={handlePageChange} />
+          </Suspense>
+        );
+      case 'outfits':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <MyOutfitsPage onPageChange={handlePageChange} />
           </Suspense>
         );
       case 'subscription':
@@ -550,6 +557,7 @@ export default function App() {
       {currentPage === 'contact' && <SEO title="Contact Us - Swap My Look Support" description="Get in touch with the Swap My Look team for support, partnerships, or any questions about our AI fashion technology." url="https://swapmylook.com/contact" />}
       {currentPage === 'help' && <SEO title="Help & FAQ - Swap My Look Support" description="Find answers to frequently asked questions and get help with using our AI fashion outfit selector platform." url="https://swapmylook.com/help" />}
       {currentPage === 'profile' && <SEO title="My Profile - Swap My Look" description="Manage your Swap My Look profile, preferences, and outfit history." url="https://swapmylook.com/profile" />}
+      {currentPage === 'outfits' && <SEO title="My Outfits - Swap My Look" description="View and manage your uploaded models, outfits, and AI-generated images." url="https://swapmylook.com/outfits" />}
       {currentPage === 'subscription' && <SEO title="Subscription Plans - Swap My Look" description="Choose the perfect subscription plan for unlimited AI outfit changes and premium features." url="https://swapmylook.com/subscription" />}
       {currentPage === 'terms' && <SEO title="Terms of Service - Swap My Look" description="Read our terms of service and privacy policy for using the Swap My Look AI fashion platform." url="https://swapmylook.com/terms" />}
       
