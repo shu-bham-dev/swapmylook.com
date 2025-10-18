@@ -6,19 +6,22 @@ import { Label } from '../ui/label';
 import { Separator } from '../ui/separator';
 import { Checkbox } from '../ui/checkbox';
 import { Alert, AlertDescription } from '../ui/alert';
-import { 
-  Sparkles, 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
+import {
+  Sparkles,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
   Chrome,
   Facebook,
   Apple,
   ArrowRight,
   UserPlus,
-  Heart
+  Heart,
+  AlertCircle
 } from 'lucide-react';
+import { apiService } from '../../services/api';
+import { toast } from 'sonner';
 
 interface LoginPageProps {
   onLogin: () => void;
@@ -38,22 +41,57 @@ export function LoginPage({ onLogin, onPageChange }: LoginPageProps) {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      if (isLogin) {
+        // Login with email and password
+        await apiService.login(email, password);
+        toast.success('Welcome back!', {
+          description: 'You have successfully logged in.',
+        });
+      } else {
+        // Sign up with email, password, and name
+        await apiService.signup(email, password, name);
+        toast.success('Account created!', {
+          description: 'Your account has been created successfully.',
+        });
+      }
       onLogin();
       onPageChange('home');
-    }, 1500);
+    } catch (error) {
+      // Error handling is now done by the API service
+      console.error('Authentication failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSocialLogin = (provider: string) => {
+  const handleGoogleLogin = async () => {
     setIsLoading(true);
-    // Simulate social login
-    setTimeout(() => {
+    
+    try {
+      // Get Google OAuth URL and redirect
+      const { url } = await apiService.getGoogleAuthUrl();
+      window.location.href = url;
+    } catch (error) {
+      console.error('Google login failed:', error);
       setIsLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setIsLoading(true);
+    
+    try {
+      await apiService.demoAuth();
+      toast.success('Demo access granted!', {
+        description: 'You are now logged in with a demo account.',
+      });
       onLogin();
       onPageChange('home');
-    }, 1000);
+    } catch (error) {
+      console.error('Demo login failed:', error);
+      setIsLoading(false);
+    }
   };
 
   const handleGuestAccess = () => {
@@ -90,7 +128,7 @@ export function LoginPage({ onLogin, onPageChange }: LoginPageProps) {
             <Button
               variant="outline"
               className="w-full"
-              onClick={() => handleSocialLogin('google')}
+              onClick={handleGoogleLogin}
               disabled={isLoading}
             >
               <Chrome className="w-4 h-4 mr-2" />
@@ -99,19 +137,19 @@ export function LoginPage({ onLogin, onPageChange }: LoginPageProps) {
             <div className="grid grid-cols-2 gap-3">
               <Button
                 variant="outline"
-                onClick={() => handleSocialLogin('facebook')}
+                onClick={handleDemoLogin}
                 disabled={isLoading}
               >
-                <Facebook className="w-4 h-4 mr-2" />
-                Facebook
+                <Sparkles className="w-4 h-4 mr-2" />
+                Demo Account
               </Button>
               <Button
                 variant="outline"
-                onClick={() => handleSocialLogin('apple')}
+                onClick={handleDemoLogin}
                 disabled={isLoading}
               >
-                <Apple className="w-4 h-4 mr-2" />
-                Apple
+                <UserPlus className="w-4 h-4 mr-2" />
+                Quick Start
               </Button>
             </div>
           </div>
@@ -195,7 +233,7 @@ export function LoginPage({ onLogin, onPageChange }: LoginPageProps) {
                   <Checkbox
                     id="remember"
                     checked={rememberMe}
-                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                    onCheckedChange={(checked: boolean) => setRememberMe(checked)}
                   />
                   <Label htmlFor="remember" className="text-sm">
                     Remember me

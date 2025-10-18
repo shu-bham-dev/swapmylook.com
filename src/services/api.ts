@@ -1,5 +1,6 @@
 // API service for communicating with the backend
 const API_BASE_URL = 'http://localhost:3001/api/v1';
+import { toast } from 'sonner';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -51,14 +52,29 @@ interface User {
 
 class ApiService {
   private authToken: string | null = null;
+  private user: User | null = null;
 
   constructor() {
     // Initialize with token from localStorage if available
     this.authToken = localStorage.getItem('authToken');
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      try {
+        this.user = JSON.parse(userData);
+      } catch (error) {
+        console.error('Failed to parse user data from localStorage:', error);
+        localStorage.removeItem('userData');
+      }
+    }
   }
 
   private getAuthHeaders(): HeadersInit {
-    const token = this.authToken || 'demo-token';
+    const token = this.authToken;
+    if (!token) {
+      return {
+        'Content-Type': 'application/json',
+      };
+    }
     return {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -66,19 +82,50 @@ class ApiService {
   }
 
   /**
-   * Set authentication token
+   * Set authentication token and user data
    */
-  setAuthToken(token: string) {
+  setAuthData(token: string, user: User) {
     this.authToken = token;
+    this.user = user;
     localStorage.setItem('authToken', token);
+    localStorage.setItem('userData', JSON.stringify(user));
   }
 
   /**
-   * Clear authentication token
+   * Clear authentication data
    */
-  clearAuthToken() {
+  clearAuthData() {
     this.authToken = null;
+    this.user = null;
     localStorage.removeItem('authToken');
+    localStorage.removeItem('userData');
+  }
+
+  /**
+   * Get current user
+   */
+  getCurrentUser(): User | null {
+    return this.user;
+  }
+
+  /**
+   * Google OAuth - Get authorization URL
+   */
+  async getGoogleAuthUrl(): Promise<{ url: string }> {
+    return this.request<{ url: string }>('/auth/google/url');
+  }
+
+  /**
+   * Google OAuth - Authenticate with ID token
+   */
+  async googleAuthWithToken(idToken: string): Promise<{ token: string; user: User }> {
+    const response = await this.request<{ token: string; user: User }>('/auth/google/token', {
+      method: 'POST',
+      body: JSON.stringify({ idToken }),
+    });
+
+    this.setAuthData(response.token, response.user);
+    return response;
   }
 
   /**
@@ -90,22 +137,112 @@ class ApiService {
       body: JSON.stringify({ email }),
     });
 
-    this.setAuthToken(response.token);
+    this.setAuthData(response.token, response.user);
     return response;
   }
 
   /**
-   * Get current user profile
+   * Sign up with email and password
    */
-  async getCurrentUser(): Promise<{ user: User }> {
-    return this.request<{ user: User }>('/auth/me');
+  async signup(email: string, password: string, name: string): Promise<{ token: string; user: User }> {
+    const response = await this.request<{ token: string; user: User }>('/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, name }),
+    });
+
+    this.setAuthData(response.token, response.user);
+    return response;
+  }
+
+  /**
+   * Login with email and password
+   */
+  async login(email: string, password: string): Promise<{ token: string; user: User }> {
+    const response = await this.request<{ token: string; user: User }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+
+    this.setAuthData(response.token, response.user);
+    return response;
+  }
+
+  /**
+   * Get current user profile from server
+   */
+  async fetchCurrentUser(): Promise<{ user: User }> {
+    const response = await this.request<{ user: User }>('/auth/me');
+    if (response.user) {
+      this.user = response.user;
+      localStorage.setItem('userData', JSON.stringify(response.user));
+    }
+    return response;
+  }
+
+  /**
+   * Refresh JWT token
+   */
+  async refreshToken(): Promise<{ token: string; user: User }> {
+    const response = await this.request<{ token: string; user: User }>('/auth/refresh', {
+      method: 'POST',
+    });
+
+    this.setAuthData(response.token, response.user);
+    return response;
+  }
+
+  /**
+   * Logout user
+   */
+  async logout(): Promise<{ message: string }> {
+    try {
+      const response = await this.request<{ message: string }>('/auth/logout', {
+        method: 'POST',
+      });
+      return response;
+    } finally {
+      this.clearAuthData();
+    }
+  }
+
+  /**
+   * Get user quota information
+   */
+  async getUserQuota(): Promise<{
+    monthlyRequests: number;
+    usedThisMonth: number;
+    remaining: number;
+    resetDate: string;
+    hasQuota: boolean;
+  }> {
+    return this.request('/auth/quota');
+  }
+
+  /**
+   * Validate JWT token
+   */
+  async validateToken(token: string): Promise<{
+    valid: boolean;
+    user?: {
+      id: string;
+      email: string;
+      name: string;
+      plan: string;
+    };
+    expiresAt?: string;
+    error?: string;
+  }> {
+    return this.request('/auth/test-token', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
   }
 
   /**
    * Check if user is authenticated
    */
   isAuthenticated(): boolean {
-    return !!this.authToken;
+    return !!this.authToken && !!this.user;
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -123,13 +260,38 @@ class ApiService {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        const errorMessage = errorData.error || `HTTP error! status: ${response.status}`;
+        
+        // Show error toast for API errors
+        toast.error('API Error', {
+          description: errorMessage,
+          duration: 5000,
+        });
+        
+        throw new Error(errorMessage);
       }
       
       const data = await response.json();
       return data;
     } catch (error) {
       console.error('API request failed:', error);
+      
+      // Show network or general error toast
+      if (error instanceof Error) {
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          toast.error('Network Error', {
+            description: 'Unable to connect to the server. Please check your connection.',
+            duration: 5000,
+          });
+        } else if (!error.message.includes('HTTP error')) {
+          // Only show generic errors that aren't already shown above
+          toast.error('Error', {
+            description: error.message,
+            duration: 5000,
+          });
+        }
+      }
+      
       throw error;
     }
   }
@@ -138,7 +300,7 @@ class ApiService {
    * Create a new generation job
    */
   async createGenerationJob(modelImageId: string, outfitImageId: string, options?: any): Promise<GenerationJob> {
-    const defaultPrompt = "Create a new image by combining the elements from the provided images. Take the cloths and place it with/on the model person. The final image should be a model wearing the cloths.";
+    const defaultPrompt = "Create a creative fashion composition. Combine elements from both images to create a new artistic fashion concept. Focus on the clothing and style elements rather than realistic human depictions.";
     
     const payload = {
       modelImageId,
@@ -148,7 +310,7 @@ class ApiService {
         strength: 0.9,
         preserveFace: true,
         background: 'transparent',
-        style: 'realistic'
+        style: 'artistic'
       }
     };
 
@@ -162,7 +324,28 @@ class ApiService {
    * Get job status
    */
   async getJobStatus(jobId: string): Promise<JobStatus> {
-    return this.request<JobStatus>(`/generate/${jobId}/status`);
+    const jobStatus = await this.request<JobStatus>(`/generate/${jobId}/status`);
+    
+    // Show toast notification for failed jobs
+    if (jobStatus.status === 'failed' && jobStatus.error) {
+      let errorMessage = jobStatus.error;
+      
+      // Handle specific Gemini API errors
+      if (errorMessage.includes('Gemini API safety filter')) {
+        errorMessage = 'Image generation blocked by content safety filters. Please try different images or prompts.';
+      } else if (errorMessage.includes('Gemini API candidate has no content')) {
+        errorMessage = 'AI service returned an unexpected response. Please try again.';
+      } else if (errorMessage.includes('Gemini API error')) {
+        errorMessage = 'AI service error. Please try again later.';
+      }
+      
+      toast.error('Generation Failed', {
+        description: errorMessage,
+        duration: 8000,
+      });
+    }
+    
+    return jobStatus;
   }
 
   /**

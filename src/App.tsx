@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './components/ui/accordion';
 import { Sparkles, Menu, X } from 'lucide-react';
 import { apiService } from './services/api';
+import { Toaster, toast } from 'sonner';
 
 // Lazy load page components with proper typing
 const LoginPage = lazy(() => import('./components/pages/LoginPage').then(module => ({ default: module.LoginPage })));
@@ -22,6 +23,7 @@ const HelpPage = lazy(() => import('./components/pages/HelpPage').then(module =>
 const ContactPage = lazy(() => import('./components/pages/ContactPage').then(module => ({ default: module.ContactPage })));
 const AboutPage = lazy(() => import('./components/pages/AboutPage').then(module => ({ default: module.AboutPage })));
 const TermsPage = lazy(() => import('./components/pages/TermsPage').then(module => ({ default: module.TermsPage })));
+const AuthSuccessPage = lazy(() => import('./components/pages/AuthSuccessPage').then(module => ({ default: module.AuthSuccessPage })));
 
 // Loading component for lazy loading
 const LoadingFallback = () => (
@@ -55,8 +57,8 @@ export default function App() {
       try {
         // Check if we have a valid token
         if (apiService.isAuthenticated()) {
-          // Verify token is still valid
-          await apiService.getCurrentUser();
+          // Verify token is still valid by fetching current user
+          await apiService.fetchCurrentUser();
           setIsLoggedIn(true);
         } else {
           // Auto-login with demo account for testing
@@ -66,7 +68,7 @@ export default function App() {
       } catch (error) {
         console.error('Authentication initialization failed:', error);
         // Clear invalid token
-        apiService.clearAuthToken();
+        apiService.clearAuthData();
         setIsLoggedIn(false);
       } finally {
         setIsInitializing(false);
@@ -79,7 +81,8 @@ export default function App() {
   // Handle login
   const handleLogin = async () => {
     try {
-      await apiService.demoAuth();
+      // The actual login is handled by the LoginPage component
+      // This function just updates the state
       setIsLoggedIn(true);
     } catch (error) {
       console.error('Login failed:', error);
@@ -241,6 +244,12 @@ export default function App() {
         return (
           <Suspense fallback={<LoadingFallback />}>
             <TermsPage onPageChange={handlePageChange} />
+          </Suspense>
+        );
+      case 'auth/success':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <AuthSuccessPage onLogin={handleLogin} onPageChange={handlePageChange} />
           </Suspense>
         );
       case 'home':
@@ -527,14 +536,26 @@ export default function App() {
   );
 
   // Handle logout
-  const handleLogout = () => {
-    apiService.clearAuthToken();
-    setIsLoggedIn(false);
-    setSelectedModel(null);
-    setSelectedOutfit(null);
-    setHistory([]);
-    setHistoryIndex(-1);
-    setCurrentPage('home');
+  const handleLogout = async () => {
+    try {
+      await apiService.logout();
+      toast.success('Logged out', {
+        description: 'You have been successfully logged out.',
+      });
+    } catch (error) {
+      console.error('Logout API call failed:', error);
+      toast.error('Logout Error', {
+        description: 'There was an issue logging out.',
+      });
+    } finally {
+      apiService.clearAuthData();
+      setIsLoggedIn(false);
+      setSelectedModel(null);
+      setSelectedOutfit(null);
+      setHistory([]);
+      setHistoryIndex(-1);
+      setCurrentPage('home');
+    }
   };
 
   // Show loading while initializing
@@ -574,6 +595,15 @@ export default function App() {
       
       {/* Page Content */}
       {renderPage()}
+
+      {/* Toast Notifications */}
+      <Toaster
+        position="top-right"
+        duration={4000}
+        expand={true}
+        richColors
+        closeButton
+      />
     </div>
   );
 }

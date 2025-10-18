@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import {
   Sparkles,
@@ -12,7 +12,7 @@ import {
   Heart,
   Shirt
 } from 'lucide-react';
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -21,6 +21,7 @@ import {
 } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Badge } from './ui/badge';
+import { apiService } from '../services/api';
 
 interface NavigationProps {
   currentPage: string;
@@ -32,6 +33,32 @@ interface NavigationProps {
 
 export function Navigation({ currentPage, onPageChange, onLogout, isLoggedIn = false, userCredits = 25 }: NavigationProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [userQuota, setUserQuota] = useState<{
+    monthlyRequests: number;
+    usedThisMonth: number;
+    remaining: number;
+    resetDate: string;
+    hasQuota: boolean;
+  } | null>(null);
+
+  // Fetch user quota when logged in
+  useEffect(() => {
+    const fetchUserQuota = async () => {
+      if (isLoggedIn && apiService.isAuthenticated()) {
+        try {
+          const quota = await apiService.getUserQuota();
+          setUserQuota(quota);
+        } catch (error) {
+          console.error('Failed to fetch user quota:', error);
+        }
+      }
+    };
+
+    fetchUserQuota();
+  }, [isLoggedIn]);
+
+  const currentUser = apiService.getCurrentUser();
+  const displayCredits = userQuota?.remaining ?? userCredits;
 
   const navigationItems = [
     { id: 'home', label: 'Style Studio', icon: Sparkles },
@@ -90,7 +117,7 @@ export function Navigation({ currentPage, onPageChange, onLogout, isLoggedIn = f
                 {/* Credits Display */}
                 <div className="flex items-center space-x-2">
                   <Badge variant="outline" className="bg-pink-50 text-pink-600 border-pink-200">
-                    ✨ {userCredits} credits
+                    ✨ {displayCredits} credits
                   </Badge>
                 </div>
 
@@ -99,17 +126,19 @@ export function Navigation({ currentPage, onPageChange, onLogout, isLoggedIn = f
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src="https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=400&h=400&fit=crop" alt="User" />
-                        <AvatarFallback>JD</AvatarFallback>
+                        <AvatarImage src={currentUser?.avatarUrl || "https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=400&h=400&fit=crop"} alt="User" />
+                        <AvatarFallback>
+                          {currentUser?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                        </AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <div className="flex items-center justify-start gap-2 p-2">
                       <div className="flex flex-col space-y-1 leading-none">
-                        <p className="font-medium">Jane Doe</p>
+                        <p className="font-medium">{currentUser?.name || 'User'}</p>
                         <p className="text-xs leading-none text-muted-foreground">
-                          jane@example.com
+                          {currentUser?.email || 'user@example.com'}
                         </p>
                       </div>
                     </div>
@@ -192,7 +221,7 @@ export function Navigation({ currentPage, onPageChange, onLogout, isLoggedIn = f
                 <>
                   <div className="py-2">
                     <Badge variant="outline" className="bg-pink-50 text-pink-600 border-pink-200">
-                      ✨ {userCredits} credits
+                      ✨ {displayCredits} credits
                     </Badge>
                   </div>
                   {userMenuItems.map((item) => (
