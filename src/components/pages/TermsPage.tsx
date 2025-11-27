@@ -238,7 +238,7 @@ export function TermsPage({ onPageChange }: TermsPageProps) {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onPageChange('profile')}
+                      onClick={() => onPageChange('settings')}
                       className="text-pink-600 border-pink-200"
                     >
                       <Download className="w-4 h-4 mr-2" />

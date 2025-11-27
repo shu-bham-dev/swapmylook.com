@@ -35,7 +35,7 @@ interface JobStatus {
   errorDetails?: any;
 }
 
-interface User {
+export interface User {
   id: string;
   email: string;
   name: string;
@@ -48,6 +48,23 @@ interface User {
     resetDate: string;
     hasQuota: boolean;
   };
+}
+
+export interface UserProfile {
+  name: string;
+  email: string;
+  gender: string;
+  profilePicture: string;
+  preferences: {
+    defaultOutfitStyle: string;
+    theme: string;
+    notifications: boolean;
+    emailUpdates: boolean;
+  };
+}
+
+export interface SettingsResponse {
+  profile: UserProfile;
 }
 
 class ApiService {
@@ -300,12 +317,9 @@ class ApiService {
    * Create a new generation job
    */
   async createGenerationJob(modelImageId: string, outfitImageId: string, options?: any): Promise<GenerationJob> {
-    const defaultPrompt = "Create a creative fashion composition. Combine elements from both images to create a new artistic fashion concept. Focus on the clothing and style elements rather than realistic human depictions.";
-    
     const payload = {
       modelImageId,
       outfitImageId,
-      prompt: defaultPrompt,
       options: options || {
         strength: 0.9,
         preserveFace: true,
@@ -474,7 +488,7 @@ class ApiService {
   /**
    * Upload a file directly
    */
-  async uploadFile(file: File, purpose: 'model' | 'outfit'): Promise<{
+  async uploadFile(file: File, purpose: 'model' | 'outfit' | 'other'): Promise<{
     imageAsset: {
       id: string;
       url: string;
@@ -522,6 +536,163 @@ class ApiService {
     allowedPurposes: string[];
   }> {
     return this.request('/uploads/limits');
+  }
+
+  /**
+   * Get user profile settings
+   */
+  async getProfileSettings(): Promise<SettingsResponse> {
+    return this.request<SettingsResponse>('/settings/profile');
+  }
+
+  /**
+   * Update user profile settings
+   */
+  async updateProfileSettings(profileData: Partial<UserProfile>): Promise<{ message: string; profile: UserProfile }> {
+    return this.request<{ message: string; profile: UserProfile }>('/settings/profile', {
+      method: 'PUT',
+      body: JSON.stringify(profileData),
+    });
+  }
+
+  /**
+   * Change user password
+   */
+  async changePassword(currentPassword: string, newPassword: string): Promise<{ message: string }> {
+    return this.request<{ message: string }>('/settings/password', {
+      method: 'PUT',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  }
+
+  /**
+   * Delete user account
+   */
+  async deleteAccount(confirmation: string): Promise<{ message: string }> {
+    return this.request<{ message: string }>('/settings/account', {
+      method: 'DELETE',
+      body: JSON.stringify({ confirmation }),
+    });
+  }
+
+  /**
+   * Get subscription details
+   */
+  async getSubscriptionDetails(): Promise<{
+    subscription: {
+      plan: string;
+      status: string;
+      trialStatus: {
+        hasTrialRemaining: boolean;
+        trialUsed: boolean;
+        trialEndsAt: string;
+        daysRemaining: number;
+      };
+      usage: {
+        used: number;
+        limit: number;
+        remaining: number;
+      };
+      resetDate: string;
+      currentPeriodEnd?: string;
+    };
+  }> {
+    return this.request('/subscription/details');
+  }
+
+  /**
+   * Get available subscription plans
+   */
+  async getSubscriptionPlans(): Promise<{
+    plans: Array<{
+      id: string;
+      name: string;
+      description: string;
+      price: { monthly: number; yearly: number };
+      features: string[];
+      monthlyRequests: number;
+      popular: boolean;
+    }>;
+  }> {
+    return this.request('/subscription/plans');
+  }
+
+  /**
+   * Upgrade subscription plan
+   */
+  async upgradeSubscription(plan: string, billingCycle: 'monthly' | 'yearly' = 'monthly'): Promise<{
+    message: string;
+    subscription: {
+      plan: string;
+      status: string;
+      trialStatus: {
+        hasTrialRemaining: boolean;
+        trialUsed: boolean;
+        trialEndsAt: string;
+        daysRemaining: number;
+      };
+      usage: {
+        used: number;
+        limit: number;
+        remaining: number;
+      };
+      resetDate: string;
+      currentPeriodEnd?: string;
+    };
+  }> {
+    return this.request('/subscription/upgrade', {
+      method: 'POST',
+      body: JSON.stringify({ plan, billingCycle }),
+    });
+  }
+
+  /**
+   * Cancel subscription
+   */
+  async cancelSubscription(): Promise<{
+    message: string;
+    subscription: {
+      plan: string;
+      status: string;
+      trialStatus: {
+        hasTrialRemaining: boolean;
+        trialUsed: boolean;
+        trialEndsAt: string;
+        daysRemaining: number;
+      };
+      usage: {
+        used: number;
+        limit: number;
+        remaining: number;
+      };
+      resetDate: string;
+      currentPeriodEnd?: string;
+    };
+  }> {
+    return this.request('/subscription/cancel', {
+      method: 'POST',
+    });
+  }
+
+  /**
+   * Get usage statistics
+   */
+  async getUsageStatistics(): Promise<{
+    usage: {
+      used: number;
+      limit: number;
+      remaining: number;
+      percentageUsed: number;
+    };
+    trialStatus: {
+      hasTrialRemaining: boolean;
+      trialUsed: boolean;
+      trialEndsAt: string;
+      daysRemaining: number;
+    };
+    resetDate: string;
+  }> {
+    return this.request('/subscription/usage');
   }
 
   /**

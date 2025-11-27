@@ -16,10 +16,9 @@ import { Toaster, toast } from 'sonner';
 
 // Lazy load page components with proper typing
 const LoginPage = lazy(() => import('./components/pages/LoginPage').then(module => ({ default: module.LoginPage })));
-const ProfilePage = lazy(() => import('./components/pages/ProfilePage').then(module => ({ default: module.ProfilePage })));
-const MyOutfitsPage = lazy(() => import('./components/pages/MyOutfitsPage').then(module => ({ default: module.MyOutfitsPage })));
+const SettingsPage = lazy(() => import('./components/pages/SettingsPage').then(module => ({ default: module.SettingsPage })));
+const MyHistoryPage = lazy(() => import('./components/pages/MyHistoryPage').then(module => ({ default: module.MyHistoryPage })));
 const SubscriptionPage = lazy(() => import('./components/pages/SubscriptionPage').then(module => ({ default: module.SubscriptionPage })));
-const HelpPage = lazy(() => import('./components/pages/HelpPage').then(module => ({ default: module.HelpPage })));
 const ContactPage = lazy(() => import('./components/pages/ContactPage').then(module => ({ default: module.ContactPage })));
 const AboutPage = lazy(() => import('./components/pages/AboutPage').then(module => ({ default: module.AboutPage })));
 const TermsPage = lazy(() => import('./components/pages/TermsPage').then(module => ({ default: module.TermsPage })));
@@ -204,28 +203,22 @@ export default function App() {
             <LoginPage onLogin={handleLogin} onPageChange={handlePageChange} />
           </Suspense>
         );
-      case 'profile':
+      case 'settings':
         return (
           <Suspense fallback={<LoadingFallback />}>
-            <ProfilePage onPageChange={handlePageChange} />
+            <SettingsPage onPageChange={handlePageChange} />
           </Suspense>
         );
-      case 'outfits':
+      case 'history':
         return (
           <Suspense fallback={<LoadingFallback />}>
-            <MyOutfitsPage onPageChange={handlePageChange} />
+            <MyHistoryPage onPageChange={handlePageChange} />
           </Suspense>
         );
       case 'subscription':
         return (
           <Suspense fallback={<LoadingFallback />}>
             <SubscriptionPage onPageChange={handlePageChange} />
-          </Suspense>
-        );
-      case 'help':
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <HelpPage onPageChange={handlePageChange} />
           </Suspense>
         );
       case 'contact':
@@ -576,9 +569,8 @@ export default function App() {
       {currentPage === 'home' && <SEO {...homePageSEO} />}
       {currentPage === 'about' && <SEO title="About Swap My Look - AI Fashion Technology" description="Learn about our AI-powered fashion technology and how we're revolutionizing virtual try-ons and outfit selection." url="https://swapmylook.com/about" />}
       {currentPage === 'contact' && <SEO title="Contact Us - Swap My Look Support" description="Get in touch with the Swap My Look team for support, partnerships, or any questions about our AI fashion technology." url="https://swapmylook.com/contact" />}
-      {currentPage === 'help' && <SEO title="Help & FAQ - Swap My Look Support" description="Find answers to frequently asked questions and get help with using our AI fashion outfit selector platform." url="https://swapmylook.com/help" />}
-      {currentPage === 'profile' && <SEO title="My Profile - Swap My Look" description="Manage your Swap My Look profile, preferences, and outfit history." url="https://swapmylook.com/profile" />}
-      {currentPage === 'outfits' && <SEO title="My Outfits - Swap My Look" description="View and manage your uploaded models, outfits, and AI-generated images." url="https://swapmylook.com/outfits" />}
+      {currentPage === 'settings' && <SEO title="Settings - Swap My Look" description="Manage your account settings, preferences, and security options." url="https://swapmylook.com/settings" />}
+      {currentPage === 'history' && <SEO title="My History - Swap My Look" description="View and manage your uploaded models, outfits, and AI-generated images." url="https://swapmylook.com/history" />}
       {currentPage === 'subscription' && <SEO title="Subscription Plans - Swap My Look" description="Choose the perfect subscription plan for unlimited AI outfit changes and premium features." url="https://swapmylook.com/subscription" />}
       {currentPage === 'terms' && <SEO title="Terms of Service - Swap My Look" description="Read our terms of service and privacy policy for using the Swap My Look AI fashion platform." url="https://swapmylook.com/terms" />}
       

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
@@ -52,11 +53,11 @@ interface OutfitsStats {
   favorites: number;
 }
 
-interface MyOutfitsPageProps {
+interface MyHistoryPageProps {
   onPageChange: (page: string) => void;
 }
 
-export function MyOutfitsPage({ onPageChange }: MyOutfitsPageProps) {
+export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
   const [outfits, setOutfits] = useState<Outfit[]>([]);
   const [stats, setStats] = useState<OutfitsStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -188,7 +189,7 @@ export function MyOutfitsPage({ onPageChange }: MyOutfitsPageProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Outfits</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">My History</h1>
           <p className="text-muted-foreground">
             Manage your uploaded models, outfits, and AI-generated images
           </p>

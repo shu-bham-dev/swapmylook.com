@@ -7,7 +7,6 @@ import {
   User,
   Settings,
   CreditCard,
-  HelpCircle,
   LogOut,
   Heart,
   Shirt
@@ -62,13 +61,12 @@ export function Navigation({ currentPage, onPageChange, onLogout, isLoggedIn = f
 
   const navigationItems = [
     { id: 'home', label: 'Style Studio', icon: Sparkles },
-    ...(isLoggedIn ? [{ id: 'outfits', label: 'My Outfits', icon: Shirt }] : []),
-    { id: 'help', label: 'Help', icon: HelpCircle },
+    ...(isLoggedIn ? [{ id: 'history', label: 'My History', icon: Shirt }] : []),
     { id: 'about', label: 'About', icon: Heart },
   ];
 
   const userMenuItems = [
-    { id: 'profile', label: 'Profile & Settings', icon: Settings },
+    { id: 'settings', label: 'Settings', icon: Settings },
     { id: 'subscription', label: 'Subscription', icon: CreditCard },
   ];
 
@@ -114,12 +112,6 @@ export function Navigation({ currentPage, onPageChange, onLogout, isLoggedIn = f
           <div className="hidden md:flex items-center space-x-4">
             {isLoggedIn ? (
               <>
-                {/* Credits Display */}
-                <div className="flex items-center space-x-2">
-                  <Badge variant="outline" className="bg-pink-50 text-pink-600 border-pink-200">
-                    ✨ {displayCredits} credits
-                  </Badge>
-                </div>
 
                 {/* User Dropdown */}
                 <DropdownMenu>
@@ -219,11 +211,6 @@ export function Navigation({ currentPage, onPageChange, onLogout, isLoggedIn = f
               
               {isLoggedIn ? (
                 <>
-                  <div className="py-2">
-                    <Badge variant="outline" className="bg-pink-50 text-pink-600 border-pink-200">
-                      ✨ {displayCredits} credits
-                    </Badge>
-                  </div>
                   {userMenuItems.map((item) => (
                     <Button
                       key={item.id}

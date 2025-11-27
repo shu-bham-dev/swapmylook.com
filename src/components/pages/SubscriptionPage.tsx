@@ -1,17 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
 import { Progress } from '../ui/progress';
-import { 
-  Crown, 
-  Check, 
-  Sparkles, 
-  Zap, 
-  Star, 
-  Users, 
+import {
+  Crown,
+  Check,
+  Sparkles,
+  Zap,
+  Star,
+  Users,
   Infinity,
   CreditCard,
   Shield,
@@ -20,6 +20,8 @@ import {
   Palette,
   Camera
 } from 'lucide-react';
+import { apiService } from '../../services/api.ts';
+import { toast } from 'sonner';
 
 interface SubscriptionPageProps {
   onPageChange: (page: string) => void;
@@ -27,87 +29,70 @@ interface SubscriptionPageProps {
 
 export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
-  const [selectedPlan, setSelectedPlan] = useState<string>('pro');
+  const [selectedPlan, setSelectedPlan] = useState<string>('free');
+  const [subscriptionData, setSubscriptionData] = useState<any>(null);
+  const [plans, setPlans] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const plans = [
-    {
-      id: 'free',
-      name: 'Free',
-      description: 'Perfect for trying out SwapMyLook',
-      price: { monthly: 0, yearly: 0 },
-      features: [
-        '5 outfit visualizations per month',
-        'Basic model selection',
-        'Standard quality renders',
-        'Community support',
-        'Watermarked downloads'
-      ],
-      limitations: [
-        'Limited outfit library access',
-        'No advanced editing tools',
-        'Basic style suggestions'
-      ],
-      icon: Heart,
-      color: 'text-gray-600',
-      bgColor: 'bg-gray-50',
-      borderColor: 'border-gray-200'
-    },
-    {
-      id: 'pro',
-      name: 'Pro',
-      description: 'For fashion enthusiasts and influencers',
-      price: { monthly: 19, yearly: 190 },
-      features: [
-        '100 outfit visualizations per month',
-        'Full outfit library access',
-        'HD quality renders',
-        'Advanced editing tools',
-        'Watermark-free downloads',
-        'Priority customer support',
-        'Style trend insights',
-        'Custom model uploads'
-      ],
-      limitations: [],
-      icon: Crown,
-      color: 'text-pink-600',
-      bgColor: 'bg-pink-50',
-      borderColor: 'border-pink-300',
-      popular: true
-    },
-    {
-      id: 'enterprise',
-      name: 'Enterprise',
-      description: 'For businesses and fashion brands',
-      price: { monthly: 99, yearly: 990 },
-      features: [
-        'Unlimited outfit visualizations',
-        'Custom outfit collections',
-        '4K quality renders',
-        'Brand integration tools',
-        'API access',
-        'Dedicated account manager',
-        'Custom model training',
-        'Advanced analytics',
-        'White-label solutions'
-      ],
-      limitations: [],
-      icon: Users,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-      borderColor: 'border-purple-300'
+  useEffect(() => {
+    fetchSubscriptionData();
+  }, []);
+
+  const fetchSubscriptionData = async () => {
+    try {
+      setLoading(true);
+      const [subscriptionResponse, plansResponse] = await Promise.all([
+        apiService.getSubscriptionDetails(),
+        apiService.getSubscriptionPlans()
+      ]);
+      
+      setSubscriptionData(subscriptionResponse.subscription);
+      setPlans(plansResponse.plans);
+      setSelectedPlan(subscriptionResponse.subscription.plan);
+    } catch (error) {
+      console.error('Failed to fetch subscription data:', error);
+      toast.error('Failed to load subscription data');
+    } finally {
+      setLoading(false);
     }
-  ];
-
-  const currentUsage = {
-    visualizations: 47,
-    limit: 100,
-    daysLeft: 18
   };
 
-  const handleUpgrade = (planId: string) => {
-    setSelectedPlan(planId);
-    // Simulate payment process
-    console.log(`Upgrading to ${planId} plan`);
+  const currentUsage = subscriptionData ? {
+    visualizations: subscriptionData.usage.used,
+    limit: subscriptionData.usage.limit,
+    daysLeft: subscriptionData.trialStatus.daysRemaining || 0
+  } : {
+    visualizations: 0,
+    limit: 1,
+    daysLeft: 0
+  };
+
+  const handleUpgrade = async (planId: string) => {
+    if (planId === 'free') {
+      // Already on free plan or downgrading
+      return;
+    }
+
+    try {
+      setSelectedPlan(planId);
+      await apiService.upgradeSubscription(planId, billingCycle);
+      toast.success(`Successfully upgraded to ${planId} plan`);
+      await fetchSubscriptionData(); // Refresh data
+    } catch (error) {
+      console.error('Failed to upgrade subscription:', error);
+      toast.error('Failed to upgrade subscription');
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    try {
+      await apiService.cancelSubscription();
+      toast.success('Subscription cancelled successfully');
+      await fetchSubscriptionData(); // Refresh data
+    } catch (error) {
+      console.error('Failed to cancel subscription:', error);
+      toast.error('Failed to cancel subscription');
+    }
   };
 
   const getPrice = (plan: typeof plans[0]) => {
@@ -120,6 +105,20 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
     return billingCycle === 'yearly' ? 20 : 0;
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+              Loading Subscription Plans...
+            </h1>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -129,35 +128,53 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
             Choose Your Style Plan
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Unlock your fashion potential with our AI-powered outfit visualization tools. 
+            Unlock your fashion potential with our AI-powered outfit visualization tools.
             Start your style journey today!
           </p>
         </div>
 
         {/* Current Usage (for logged-in users) */}
-        <Card className="p-6 mb-8 bg-gradient-to-r from-pink-50 to-purple-50 border-pink-200">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
-                <Zap className="w-5 h-5 text-pink-600" />
+        {subscriptionData && (
+          <Card className="p-6 mb-8 bg-gradient-to-r from-pink-50 to-purple-50 border-pink-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-pink-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-pink-800">Current Usage</h3>
+                  <p className="text-sm text-pink-600">
+                    {subscriptionData.plan.charAt(0).toUpperCase() + subscriptionData.plan.slice(1)} Plan •
+                    {subscriptionData.trialStatus.hasTrialRemaining ? (
+                      <> {subscriptionData.trialStatus.daysRemaining} days trial remaining</>
+                    ) : subscriptionData.currentPeriodEnd ? (
+                      <> Plan active until {new Date(subscriptionData.currentPeriodEnd).toLocaleDateString()}</>
+                    ) : (
+                      <> Free plan</>
+                    )}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-semibold text-pink-800">Current Usage</h3>
-                <p className="text-sm text-pink-600">Pro Plan • {currentUsage.daysLeft} days remaining</p>
-              </div>
+              <Badge className="bg-pink-200 text-pink-800 border-pink-300">
+                {currentUsage.visualizations}/{currentUsage.limit} used
+              </Badge>
             </div>
-            <Badge className="bg-pink-200 text-pink-800 border-pink-300">
-              {currentUsage.visualizations}/{currentUsage.limit} used
-            </Badge>
-          </div>
-          <Progress 
-            value={(currentUsage.visualizations / currentUsage.limit) * 100} 
-            className="h-3 mb-2" 
-          />
-          <p className="text-sm text-pink-700">
-            You've used {currentUsage.visualizations} of {currentUsage.limit} outfit visualizations this month.
-          </p>
-        </Card>
+            <Progress
+              value={(currentUsage.visualizations / currentUsage.limit) * 100}
+              className="h-3 mb-2"
+            />
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-pink-700">
+                You've used {currentUsage.visualizations} of {currentUsage.limit} outfit visualizations this month.
+              </p>
+              {subscriptionData.plan !== 'free' && (
+                <Button variant="outline" size="sm" onClick={handleCancelSubscription}>
+                  Cancel Subscription
+                </Button>
+              )}
+            </div>
+          </Card>
+        )}
 
         {/* Billing Toggle */}
         <div className="flex items-center justify-center space-x-4 mb-8">
@@ -166,7 +183,7 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
           </span>
           <Switch
             checked={billingCycle === 'yearly'}
-            onCheckedChange={(checked) => setBillingCycle(checked ? 'yearly' : 'monthly')}
+            onCheckedChange={(checked: boolean) => setBillingCycle(checked ? 'yearly' : 'monthly')}
           />
           <span className={`text-sm ${billingCycle === 'yearly' ? 'font-medium' : 'text-muted-foreground'}`}>
             Yearly
@@ -180,18 +197,28 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
 
         {/* Pricing Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {plans.map((plan) => {
+          {plans.length > 0 ? plans.map((plan) => {
             const { price, period } = getPrice(plan);
-            const Icon = plan.icon;
-            const isCurrentPlan = plan.id === 'pro'; // Assuming user is on pro plan
+            const Icon = plan.id === 'free' ? Heart : plan.id === 'basic' ? Sparkles : plan.id === 'premium' ? Crown : Users;
+            const isCurrentPlan = plan.id === (subscriptionData?.plan || 'free');
+            
+            // Define default styling for each plan
+            const planStyles = {
+              free: { color: 'text-gray-600', bgColor: 'bg-gray-50', borderColor: 'border-gray-200' },
+              basic: { color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200' },
+              premium: { color: 'text-pink-600', bgColor: 'bg-pink-50', borderColor: 'border-pink-200' },
+              pro: { color: 'text-purple-600', bgColor: 'bg-purple-50', borderColor: 'border-purple-200' }
+            };
+            
+            const style = planStyles[plan.id as keyof typeof planStyles] || planStyles.free;
             
             return (
               <Card
                 key={plan.id}
                 className={`relative p-6 transition-all duration-300 hover:shadow-lg ${
-                  plan.popular 
-                    ? 'ring-2 ring-pink-400 shadow-lg scale-105' 
-                    : `${plan.borderColor} hover:${plan.borderColor.replace('border-', 'ring-2 ring-')}`
+                  plan.popular
+                    ? 'ring-2 ring-pink-400 shadow-lg scale-105'
+                    : `${style.borderColor} hover:ring-2 hover:ring-opacity-50`
                 }`}
               >
                 {plan.popular && (
@@ -206,8 +233,8 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
                 <div className="space-y-6">
                   {/* Header */}
                   <div className="space-y-3">
-                    <div className={`w-12 h-12 ${plan.bgColor} rounded-xl flex items-center justify-center`}>
-                      <Icon className={`w-6 h-6 ${plan.color}`} />
+                    <div className={`w-12 h-12 ${style.bgColor} rounded-xl flex items-center justify-center`}>
+                      <Icon className={`w-6 h-6 ${style.color}`} />
                     </div>
                     <div>
                       <h3 className="text-xl font-bold">{plan.name}</h3>
@@ -232,7 +259,7 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
                   <div className="space-y-3">
                     <h4 className="font-medium">What's included:</h4>
                     <ul className="space-y-2">
-                      {plan.features.map((feature, index) => (
+                      {plan.features && plan.features.map((feature: string, index: number) => (
                         <li key={index} className="flex items-start space-x-2 text-sm">
                           <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                           <span>{feature}</span>
@@ -250,6 +277,7 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
                     ) : (
                       <Button
                         onClick={() => handleUpgrade(plan.id)}
+                        disabled={plan.id === 'free'}
                         className={`w-full ${
                           plan.id === 'free'
                             ? 'bg-gray-600 hover:bg-gray-700'
@@ -258,14 +286,18 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
                             : 'bg-purple-500 hover:bg-purple-600'
                         } text-white`}
                       >
-                        {plan.id === 'free' ? 'Get Started' : `Upgrade to ${plan.name}`}
+                        {plan.id === 'free' ? 'Current Plan' : `Upgrade to ${plan.name}`}
                       </Button>
                     )}
                   </div>
                 </div>
               </Card>
             );
-          })}
+          }) : (
+            <div className="col-span-3 text-center py-8">
+              <p className="text-muted-foreground">No subscription plans available.</p>
+            </div>
+          )}
         </div>
 
         {/* Feature Comparison */}
@@ -277,21 +309,24 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
                 <tr className="border-b">
                   <th className="text-left py-3 px-4">Features</th>
                   <th className="text-center py-3 px-4">Free</th>
-                  <th className="text-center py-3 px-4 bg-pink-50">Pro</th>
-                  <th className="text-center py-3 px-4">Enterprise</th>
+                  <th className="text-center py-3 px-4">Basic</th>
+                  <th className="text-center py-3 px-4 bg-pink-50">Premium</th>
+                  <th className="text-center py-3 px-4">Pro</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
                 <tr className="border-b">
                   <td className="py-3 px-4">Monthly Visualizations</td>
-                  <td className="text-center py-3 px-4">5</td>
-                  <td className="text-center py-3 px-4 bg-pink-50">100</td>
-                  <td className="text-center py-3 px-4">
-                    <Infinity className="w-4 h-4 mx-auto" />
-                  </td>
+                  <td className="text-center py-3 px-4">1</td>
+                  <td className="text-center py-3 px-4">10</td>
+                  <td className="text-center py-3 px-4 bg-pink-50">50</td>
+                  <td className="text-center py-3 px-4">100</td>
                 </tr>
                 <tr className="border-b">
                   <td className="py-3 px-4">HD Quality</td>
+                  <td className="text-center py-3 px-4">
+                    <X className="w-4 h-4 mx-auto text-red-500" />
+                  </td>
                   <td className="text-center py-3 px-4">
                     <X className="w-4 h-4 mx-auto text-red-500" />
                   </td>
@@ -307,6 +342,9 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
                   <td className="text-center py-3 px-4">
                     <X className="w-4 h-4 mx-auto text-red-500" />
                   </td>
+                  <td className="text-center py-3 px-4">
+                    <X className="w-4 h-4 mx-auto text-red-500" />
+                  </td>
                   <td className="text-center py-3 px-4 bg-pink-50">
                     <Check className="w-4 h-4 mx-auto text-green-500" />
                   </td>
@@ -316,6 +354,12 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
                 </tr>
                 <tr className="border-b">
                   <td className="py-3 px-4">API Access</td>
+                  <td className="text-center py-3 px-4">
+                    <X className="w-4 h-4 mx-auto text-red-500" />
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <X className="w-4 h-4 mx-auto text-red-500" />
+                  </td>
                   <td className="text-center py-3 px-4">
                     <X className="w-4 h-4 mx-auto text-red-500" />
                   </td>
@@ -354,7 +398,7 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
               <div>
                 <h4 className="font-medium mb-2">Is there a free trial?</h4>
                 <p className="text-sm text-muted-foreground">
-                  Yes! Every new user gets 5 free outfit visualizations to try our platform.
+                  Yes! Every new user gets 1 free outfit visualization to try our platform.
                 </p>
               </div>
               <div>
