@@ -1,0 +1,11 @@
+---
+deployment:
+  tasks:
+    - export APPROOT=/home/swapqmrj/repositories/frontend
+    - export DEPLOYPATH=/home/swapqmrj/public_html/
+
+    - cd $APPROOT
+    - npm install
+    - npm run build
+
+    - /bin/rsync -a --delete build/ $DEPLOYPATH
