@@ -1,11 +1,18 @@
 ---
 deployment:
   tasks:
+    # Where the repo lives on server
     - export APPROOT=/home/swapqmrj/repositories/frontend
+
+    # Where your website should be served from (document root)
     - export DEPLOYPATH=/home/swapqmrj/public_html/
 
+    # Go to app root
     - cd $APPROOT
+
+    # Install deps & build React (first deployment might take some time)
     - npm install
     - npm run build
 
+    # Deploy built files to public_html (clean old ones)
     - /bin/rsync -a --delete build/ $DEPLOYPATH

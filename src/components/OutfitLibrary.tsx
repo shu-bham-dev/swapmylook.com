@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -91,6 +92,7 @@ const outfits: Outfit[] = [
 ];
 
 export function OutfitLibrary({ onOutfitSelect, selectedOutfit }: OutfitLibraryProps) {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [likedOutfits, setLikedOutfits] = useState<Set<string>>(new Set(['2', '5']));
@@ -98,6 +100,9 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit }: OutfitLibraryP
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedOutfit, setUploadedOutfit] = useState<Outfit | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check if user is authenticated
+  const isAuthenticated = apiService.isAuthenticated();
 
   // Check if the selected outfit is an uploaded one
   const isUploadedOutfitSelected = selectedOutfit && uploadedOutfit && selectedOutfit.id === uploadedOutfit.id;
@@ -130,6 +135,18 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit }: OutfitLibraryP
       }
       return newLiked;
     });
+  };
+
+  const handleUploadButtonClick = () => {
+    if (!isAuthenticated) {
+      // Redirect to login page using React Router
+      navigate('/login');
+      return;
+    }
+    
+    if (fileInputRef.current && !isUploading) {
+      fileInputRef.current.click();
+    }
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {

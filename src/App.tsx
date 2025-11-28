@@ -1,4 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Navigation } from './components/Navigation';
 import { ModelSelection } from './components/ModelSelection';
 import { OutfitLibrary, type Outfit } from './components/OutfitLibrary';
@@ -38,8 +39,10 @@ interface Model {
   category: 'female' | 'male' | 'diverse';
 }
 
-export default function App() {
-  const [currentPage, setCurrentPage] = useState('home');
+// Main App component with routing
+function AppContent() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [selectedModel, setSelectedModel] = useState<Model | null>(null);
   const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null);
@@ -88,16 +91,9 @@ export default function App() {
     }
   };
 
-  // Handle logout (when navigating to login page while logged in)
+  // Handle page navigation
   const handlePageChange = (page: string) => {
-    if (page === 'login' && isLoggedIn) {
-      setIsLoggedIn(false);
-      setSelectedModel(null);
-      setSelectedOutfit(null);
-      setHistory([]);
-      setHistoryIndex(-1);
-    }
-    setCurrentPage(page);
+    navigate(`/${page === 'home' ? '' : page}`);
   };
 
   // Determine current step for progress tracking
@@ -194,62 +190,8 @@ export default function App() {
     }
   };
 
-  // Route to different pages with lazy loading
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'login':
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <LoginPage onLogin={handleLogin} onPageChange={handlePageChange} />
-          </Suspense>
-        );
-      case 'settings':
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <SettingsPage onPageChange={handlePageChange} />
-          </Suspense>
-        );
-      case 'history':
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <MyHistoryPage onPageChange={handlePageChange} />
-          </Suspense>
-        );
-      case 'subscription':
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <SubscriptionPage onPageChange={handlePageChange} />
-          </Suspense>
-        );
-      case 'contact':
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <ContactPage onPageChange={handlePageChange} />
-          </Suspense>
-        );
-      case 'about':
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <AboutPage onPageChange={handlePageChange} />
-          </Suspense>
-        );
-      case 'terms':
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <TermsPage onPageChange={handlePageChange} />
-          </Suspense>
-        );
-      case 'auth/success':
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <AuthSuccessPage onLogin={handleLogin} onPageChange={handlePageChange} />
-          </Suspense>
-        );
-      case 'home':
-      default:
-        return renderHomePage();
-    }
-  };
+  // Get current page from location
+  const currentPage = location.pathname === '/' ? 'home' : location.pathname.slice(1);
 
   // Render the main fashion tool page
   const renderHomePage = () => (
@@ -547,7 +489,7 @@ export default function App() {
       setSelectedOutfit(null);
       setHistory([]);
       setHistoryIndex(-1);
-      setCurrentPage('home');
+      navigate('/');
     }
   };
 
@@ -586,7 +528,50 @@ export default function App() {
       )}
       
       {/* Page Content */}
-      {renderPage()}
+      <Routes>
+        <Route path="/" element={renderHomePage()} />
+        <Route path="/login" element={
+          <Suspense fallback={<LoadingFallback />}>
+            <LoginPage onLogin={handleLogin} onPageChange={handlePageChange} />
+          </Suspense>
+        } />
+        <Route path="/settings" element={
+          <Suspense fallback={<LoadingFallback />}>
+            <SettingsPage onPageChange={handlePageChange} />
+          </Suspense>
+        } />
+        <Route path="/history" element={
+          <Suspense fallback={<LoadingFallback />}>
+            <MyHistoryPage onPageChange={handlePageChange} />
+          </Suspense>
+        } />
+        <Route path="/subscription" element={
+          <Suspense fallback={<LoadingFallback />}>
+            <SubscriptionPage onPageChange={handlePageChange} />
+          </Suspense>
+        } />
+        <Route path="/contact" element={
+          <Suspense fallback={<LoadingFallback />}>
+            <ContactPage onPageChange={handlePageChange} />
+          </Suspense>
+        } />
+        <Route path="/about" element={
+          <Suspense fallback={<LoadingFallback />}>
+            <AboutPage onPageChange={handlePageChange} />
+          </Suspense>
+        } />
+        <Route path="/terms" element={
+          <Suspense fallback={<LoadingFallback />}>
+            <TermsPage onPageChange={handlePageChange} />
+          </Suspense>
+        } />
+        <Route path="/auth/success" element={
+          <Suspense fallback={<LoadingFallback />}>
+            <AuthSuccessPage onLogin={handleLogin} onPageChange={handlePageChange} />
+          </Suspense>
+        } />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
 
       {/* Toast Notifications */}
       <Toaster
@@ -597,5 +582,14 @@ export default function App() {
         closeButton
       />
     </div>
+  );
+}
+
+// Main App wrapper with Router
+export default function App() {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
   );
 }

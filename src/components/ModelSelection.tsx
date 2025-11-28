@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Upload, User } from 'lucide-react';
@@ -39,14 +40,24 @@ const predefinedModels: Model[] = [
 ];
 
 export function ModelSelection({ onModelSelect, selectedModel }: ModelSelectionProps) {
+  const navigate = useNavigate();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedModel, setUploadedModel] = useState<Model | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check if user is authenticated
+  const isAuthenticated = apiService.isAuthenticated();
 
   // Check if the selected model is an uploaded one
   const isUploadedModelSelected = selectedModel && uploadedModel && selectedModel.id === uploadedModel.id;
 
   const handleButtonClick = () => {
+    if (!isAuthenticated) {
+      // Redirect to login page using React Router
+      navigate('/login');
+      return;
+    }
+    
     if (fileInputRef.current && !isUploading) {
       fileInputRef.current.click();
     }
