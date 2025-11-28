@@ -115,7 +115,7 @@ export function ModelSelection({ onModelSelect, selectedModel }: ModelSelectionP
     <div className="space-y-6">
       <div className="text-center space-y-2">
         <h2 className="text-2xl font-semibold bg-gradient-to-r from-pink-400 to-coral-500 bg-clip-text text-transparent">
-          Choose Your Model
+          Choose Your Modelss
         </h2>
         <p className="text-muted-foreground">
           Select a model or upload your own photo to get started
