@@ -1,13 +1,3 @@
-name: Deploy frontend to cPanel
-
-on:
-  push:
-    branches:
-      - main
-
-env:
-  NODE_ENV: production
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -24,40 +14,39 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          # change key if you want to bust cache manually
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json','**/package.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
-      - name: Install dependencies (robust with fallback)
+      - name: Install dependencies (robust, include dev deps for build)
         run: |
           set -e
-          echo "Attempting reproducible install (npm ci) first..."
+          export npm_config_production=false
+          echo "npm will install devDependencies: $npm_config_production"
           if [ -f package-lock.json ]; then
+            echo "Trying npm ci (will install dev deps because npm_config_production=false)..."
             if npm ci --prefer-offline --no-audit; then
               echo "npm ci succeeded"
             else
-              echo "npm ci failed — cleaning and retrying with npm install --no-optional"
+              echo "npm ci failed — cleaning and retrying with npm install --no-optional (dev deps included)"
               rm -rf node_modules package-lock.json
-              # disable optional deps to avoid native platform-specific optional packages
-              npm_config_optional=false
+              export npm_config_optional=false
               npm install --no-optional
             fi
           else
-            echo "No package-lock.json present — running npm install --no-optional"
-            npm_config_optional=false
+            echo "No package-lock.json present — running npm install --no-optional (dev deps included)"
+            export npm_config_optional=false
             npm install --no-optional
           fi
 
       - name: Verify node_modules and node version
         run: |
           node -v
-          ls -la node_modules | head -n 10 || true
+          ls -la node_modules | head -n 20 || true
 
-      - name: Build
+      - name: Build (produces build/ or dist/)
         run: npm run build
         env:
-          # ensure Node sees optional disabled during build if fallback used
           npm_config_optional: false
 
       - name: Deploy build folder to cPanel via FTP
@@ -68,8 +57,8 @@ jobs:
           password: ${{ secrets.FRONTEND_FTP_PASSWORD }}
           port: 21
           protocol: ftp
-          local-dir: build        # change to "dist" if your project outputs dist/
-          server-dir: ./          # FTP user's default folder should be your public_html
+          local-dir: build        # change to 'dist' if needed
+          server-dir: ./
           dangerous-clean-slate: true
           exclude: |
             **/.git*
