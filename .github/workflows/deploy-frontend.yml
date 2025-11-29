@@ -21,6 +21,24 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install dependencies (robust)
+        run: |
+          set -e
+          # Prefer reproducible install when lockfile exists
+          if [ -f package-lock.json ]; then
+            echo "Trying npm ci"
+            if npm ci; then
+              echo "npm ci succeeded"
+            else
+              echo "npm ci failed — retrying with npm install --no-optional after cleaning"
+              rm -rf node_modules package-lock.json
+              npm install --no-optional
+            fi
+          else
+            echo "No package-lock.json — using npm install --no-optional"
+            npm install --no-optional
+          fi
+
       - name: Build React app
         run: npm run build
 
