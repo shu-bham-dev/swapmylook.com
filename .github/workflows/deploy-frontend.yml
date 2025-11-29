@@ -70,7 +70,7 @@ jobs:
           password: ${{ secrets.FRONTEND_FTP_PASSWORD }}
           port: 21
           protocol: ftp
-          local-dir: build            # <-- change to "dist" if your build outputs dist/
+          local-dir: build/           # <-- change to "dist/" if your build outputs dist/
           server-dir: ./              # FTP user's home should map to public_html
           dangerous-clean-slate: true
           exclude: |
