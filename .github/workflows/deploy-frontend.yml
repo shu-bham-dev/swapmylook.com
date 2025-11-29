@@ -3,44 +3,62 @@ name: Deploy frontend to cPanel
 on:
   push:
     branches:
-      - main   # change if your main branch is different
+      - main
+
+env:
+  NODE_ENV: production
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Use Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          # change key if you want to bust cache manually
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json','**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
-      - name: Install dependencies (robust)
+      - name: Install dependencies (robust with fallback)
         run: |
           set -e
-          # Prefer reproducible install when lockfile exists
+          echo "Attempting reproducible install (npm ci) first..."
           if [ -f package-lock.json ]; then
-            echo "Trying npm ci"
-            if npm ci; then
+            if npm ci --prefer-offline --no-audit; then
               echo "npm ci succeeded"
             else
-              echo "npm ci failed — retrying with npm install --no-optional after cleaning"
+              echo "npm ci failed — cleaning and retrying with npm install --no-optional"
               rm -rf node_modules package-lock.json
+              # disable optional deps to avoid native platform-specific optional packages
+              npm_config_optional=false
               npm install --no-optional
             fi
           else
-            echo "No package-lock.json — using npm install --no-optional"
+            echo "No package-lock.json present — running npm install --no-optional"
+            npm_config_optional=false
             npm install --no-optional
           fi
 
-      - name: Build React app
+      - name: Verify node_modules and node version
+        run: |
+          node -v
+          ls -la node_modules | head -n 10 || true
+
+      - name: Build
         run: npm run build
+        env:
+          # ensure Node sees optional disabled during build if fallback used
+          npm_config_optional: false
 
       - name: Deploy build folder to cPanel via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
@@ -48,11 +66,11 @@ jobs:
           server: ${{ secrets.FRONTEND_FTP_HOST }}
           username: ${{ secrets.FRONTEND_FTP_USERNAME }}
           password: ${{ secrets.FRONTEND_FTP_PASSWORD }}
-          port: ${{ secrets.FRONTEND_FTP_PORT || 21 }}
+          port: 21
           protocol: ftp
-          local-dir: build
-          server-dir: ./   # because FTP directory is already public_html
+          local-dir: build        # change to "dist" if your project outputs dist/
+          server-dir: ./          # FTP user's default folder should be your public_html
+          dangerous-clean-slate: true
           exclude: |
             **/.git*
             **/.github*
-          dangerous-clean-slate: true
