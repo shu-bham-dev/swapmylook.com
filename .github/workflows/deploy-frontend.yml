@@ -1,0 +1,42 @@
+name: Deploy backend to cPanel
+
+on:
+  push:
+    branches:
+      - main   # change if needed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Optional: run tests or lint here
+      - name: Install dependencies (for tests only)
+        run: npm ci
+
+      # Deploy only project files to server (no node_modules, no git)
+      - name: Deploy backend via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ secrets.BACKEND_FTP_HOST }}
+          username: ${{ secrets.BACKEND_FTP_USERNAME }}
+          password: ${{ secrets.BACKEND_FTP_PASSWORD }}
+          port: ${{ secrets.BACKEND_FTP_PORT || 21 }}
+          protocol: ftp
+          local-dir: .
+          server-dir: ./   # FTP root is /backend
+          exclude: |
+            **/.git*
+            **/.github*
+            node_modules/**
+            tests/**
+            coverage/**
+            .env*
