@@ -1,12 +1,12 @@
-name: Deploy backend to cPanel
+name: Deploy frontend to cPanel
 
 on:
   push:
     branches:
-      - main   # change if needed
+      - main   # change if your main branch is different
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -18,25 +18,23 @@ jobs:
         with:
           node-version: 20
 
-      # Optional: run tests or lint here
-      - name: Install dependencies (for tests only)
+      - name: Install dependencies
         run: npm ci
 
-      # Deploy only project files to server (no node_modules, no git)
-      - name: Deploy backend via FTP
+      - name: Build React app
+        run: npm run build
+
+      - name: Deploy build folder to cPanel via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
-          server: ${{ secrets.BACKEND_FTP_HOST }}
-          username: ${{ secrets.BACKEND_FTP_USERNAME }}
-          password: ${{ secrets.BACKEND_FTP_PASSWORD }}
-          port: ${{ secrets.BACKEND_FTP_PORT || 21 }}
+          server: ${{ secrets.FRONTEND_FTP_HOST }}
+          username: ${{ secrets.FRONTEND_FTP_USERNAME }}
+          password: ${{ secrets.FRONTEND_FTP_PASSWORD }}
+          port: ${{ secrets.FRONTEND_FTP_PORT || 21 }}
           protocol: ftp
-          local-dir: .
-          server-dir: ./   # FTP root is /backend
+          local-dir: build
+          server-dir: ./   # because FTP directory is already public_html
           exclude: |
             **/.git*
             **/.github*
-            node_modules/**
-            tests/**
-            coverage/**
-            .env*
+          dangerous-clean-slate: true
