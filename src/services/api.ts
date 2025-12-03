@@ -1,5 +1,6 @@
 // API service for communicating with the backend
-const API_BASE_URL = 'https://swapmylookcom-be-production.up.railway.app/api/v1';
+// const API_BASE_URL = 'https://swapmylookcom-be-production.up.railway.app/api/v1';
+const API_BASE_URL = 'http://localhost:3001/api/v1';
 import { toast } from 'sonner';
 
 interface ApiResponse<T> {
@@ -145,18 +146,6 @@ class ApiService {
     return response;
   }
 
-  /**
-   * Demo authentication for testing
-   */
-  async demoAuth(email?: string): Promise<{ token: string; user: User }> {
-    const response = await this.request<{ token: string; user: User }>('/auth/demo', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-    });
-
-    this.setAuthData(response.token, response.user);
-    return response;
-  }
 
   /**
    * Sign up with email and password

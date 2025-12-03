@@ -78,21 +78,6 @@ export function LoginPage({ onLogin, onPageChange }: LoginPageProps) {
     }
   };
 
-  const handleDemoLogin = async () => {
-    setIsLoading(true);
-    
-    try {
-      await apiService.demoAuth();
-      toast.success('Demo access granted!', {
-        description: 'You are now logged in with a demo account.',
-      });
-      onLogin();
-      onPageChange('home');
-    } catch (error) {
-      console.error('Demo login failed:', error);
-      setIsLoading(false);
-    }
-  };
 
   const handleGuestAccess = () => {
     onPageChange('home');
@@ -134,24 +119,6 @@ export function LoginPage({ onLogin, onPageChange }: LoginPageProps) {
               <Chrome className="w-4 h-4 mr-2" />
               Continue with Google
             </Button>
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                variant="outline"
-                onClick={handleDemoLogin}
-                disabled={isLoading}
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Demo Account
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleDemoLogin}
-                disabled={isLoading}
-              >
-                <UserPlus className="w-4 h-4 mr-2" />
-                Quick Start
-              </Button>
-            </div>
           </div>
 
           <div className="relative">

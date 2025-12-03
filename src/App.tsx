@@ -63,9 +63,8 @@ function AppContent() {
           await apiService.fetchCurrentUser();
           setIsLoggedIn(true);
         } else {
-          // Auto-login with demo account for testing
-          await apiService.demoAuth();
-          setIsLoggedIn(true);
+          // No auto-login, user remains logged out
+          setIsLoggedIn(false);
         }
       } catch (error) {
         console.error('Authentication initialization failed:', error);
