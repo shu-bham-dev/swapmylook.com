@@ -137,22 +137,6 @@ export function AboutPage({ onPageChange }: AboutPageProps) {
               Our AI-powered platform makes fashion exploration fun, accessible, and personal.
             </p>
           </div>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Button
-              onClick={() => onPageChange('login')}
-              className="bg-pink-500 hover:bg-pink-600 text-white"
-            >
-              Join Our Community
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => onPageChange('contact')}
-              className="border-pink-200 text-pink-600 hover:bg-pink-50"
-            >
-              Get in Touch
-            </Button>
-          </div>
         </div>
 
         {/* Stats */}
@@ -228,114 +212,8 @@ export function AboutPage({ onPageChange }: AboutPageProps) {
           </div>
         </div>
 
-        {/* Team */}
-        <div className="mb-16">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold mb-4">Meet Our Team</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              We're a diverse team of fashion lovers, technologists, and dreamers working to transform how people experience style.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {teamMembers.map((member, index) => (
-              <Card key={index} className="p-6 text-center hover:shadow-md transition-shadow">
-                <div className="w-20 h-20 mx-auto mb-4 rounded-full overflow-hidden">
-                  <ImageWithFallback
-                    src={member.image}
-                    alt={member.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <h3 className="font-semibold mb-1">{member.name}</h3>
-                <p className="text-sm text-pink-600 mb-3">{member.role}</p>
-                <p className="text-xs text-muted-foreground leading-relaxed">{member.bio}</p>
-              </Card>
-            ))}
-          </div>
-        </div>
 
-        {/* Timeline */}
-        <div className="mb-16">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold mb-4">Our Journey</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              From a simple idea to a global platform used by fashion enthusiasts worldwide.
-            </p>
-          </div>
-          <div className="relative">
-            {/* Timeline line */}
-            <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-pink-200 hidden md:block"></div>
-            
-            <div className="space-y-8">
-              {milestones.map((milestone, index) => (
-                <div key={index} className="relative flex items-start space-x-6">
-                  {/* Timeline dot */}
-                  <div className="relative z-10 w-16 h-16 bg-pink-100 rounded-2xl flex items-center justify-center">
-                    <milestone.icon className="w-8 h-8 text-pink-600" />
-                  </div>
-                  
-                  <Card className="flex-1 p-6">
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-3">
-                        <Badge className="bg-pink-100 text-pink-700 border-pink-200">
-                          {milestone.year}
-                        </Badge>
-                        <h3 className="text-lg font-semibold">{milestone.title}</h3>
-                      </div>
-                      <p className="text-muted-foreground">{milestone.description}</p>
-                    </div>
-                  </Card>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
 
-        {/* Technology */}
-        <Card className="p-8 mb-16 bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <Zap className="w-5 h-5 text-purple-600" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-purple-800">Cutting-Edge AI Technology</h2>
-                </div>
-                <p className="text-purple-700 leading-relaxed">
-                  Our proprietary AI algorithms analyze millions of fashion combinations to provide 
-                  realistic outfit visualizations. We use advanced computer vision and machine learning 
-                  to ensure accurate fit, lighting, and style representation.
-                </p>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span className="text-purple-700">95% accuracy in outfit visualization</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span className="text-purple-700">Real-time processing and rendering</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span className="text-purple-700">Privacy-first architecture</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span className="text-purple-700">Continuous learning and improvement</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-32 h-32 bg-gradient-to-r from-purple-500 to-pink-500 rounded-3xl">
-                <Camera className="w-16 h-16 text-white" />
-              </div>
-            </div>
-          </div>
-        </Card>
 
         {/* Call to Action */}
         <Card className="p-8 text-center bg-gradient-to-r from-pink-500 to-purple-600 text-white">

@@ -16,7 +16,6 @@ import {
   Facebook,
   Apple,
   ArrowRight,
-  UserPlus,
   Heart,
   AlertCircle
 } from 'lucide-react';
@@ -44,7 +43,7 @@ export function LoginPage({ onLogin, onPageChange }: LoginPageProps) {
     try {
       if (isLogin) {
         // Login with email and password
-        await apiService.login(email, password);
+        await apiService.login(email, password, rememberMe);
         toast.success('Welcome back!', {
           description: 'You have successfully logged in.',
         });
@@ -79,9 +78,6 @@ export function LoginPage({ onLogin, onPageChange }: LoginPageProps) {
   };
 
 
-  const handleGuestAccess = () => {
-    onPageChange('home');
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50 flex items-center justify-center p-4">
@@ -241,17 +237,6 @@ export function LoginPage({ onLogin, onPageChange }: LoginPageProps) {
               </Button>
             </p>
 
-            <Separator />
-
-            {/* Guest Access */}
-            <Button
-              variant="outline"
-              onClick={handleGuestAccess}
-              className="w-full text-gray-600 border-gray-200 hover:bg-gray-50"
-            >
-              <UserPlus className="w-4 h-4 mr-2" />
-              Continue as Guest
-            </Button>
           </div>
         </Card>
 

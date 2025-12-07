@@ -256,7 +256,7 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit }: OutfitLibraryP
                     }`}
                     onClick={handleSelectUploadedOutfit}
                   >
-                    {isUploadedOutfitSelected ? 'Selected ✓' : 'Select'}
+                    {isUploadedOutfitSelected ? 'Selected ✓' : 'Generate'}
                   </Button>
                   <Button
                     variant="outline"

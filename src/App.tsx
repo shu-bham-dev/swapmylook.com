@@ -92,6 +92,11 @@ function AppContent() {
 
   // Handle page navigation
   const handlePageChange = (page: string) => {
+    if (page === 'login' && !isLoggedIn) {
+      toast.info('Please login to continue', {
+        description: 'You need to be logged in to access this feature.',
+      });
+    }
     navigate(`/${page === 'home' ? '' : page}`);
   };
 
@@ -109,11 +114,32 @@ function AppContent() {
     setIsLoading(true);
     setJobStatus('queued');
     
+    // Scroll to preview canvas after a short delay
+    const scrollToPreview = () => {
+      setTimeout(() => {
+        const element = document.getElementById('preview-canvas');
+        if (element) {
+          console.log('Scrolling to preview canvas', element);
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          // Additional fallback: scroll by offset if needed
+          const yOffset = -80; // adjust for fixed header if any
+          const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        } else {
+          console.warn('Preview canvas element not found');
+        }
+      }, 200);
+    };
+    
     try {
       // Add to history
       const newHistoryEntry = { model: selectedModel, outfit };
       setHistory(prev => [...prev.slice(0, historyIndex + 1), newHistoryEntry]);
       setHistoryIndex(prev => prev + 1);
+      
+      // Update selected outfit immediately to show placeholder
+      setSelectedOutfit(outfit);
+      scrollToPreview();
       
       // Create generation job with default prompt
       const job = await apiService.createGenerationJob(
@@ -139,10 +165,12 @@ function AppContent() {
             setSelectedOutfit(updatedOutfit);
             setIsLoading(false);
             console.log('✅ AI Generated image updated:', status.outputImage.url);
+            scrollToPreview();
           } else if (status.status === 'failed') {
             console.error('Generation failed:', status.error);
             setSelectedOutfit(outfit);
             setIsLoading(false);
+            scrollToPreview();
           } else if (status.status === 'processing' || status.status === 'queued') {
             // Continue polling
             setTimeout(pollJobStatus, 2000);
@@ -151,6 +179,7 @@ function AppContent() {
           console.error('Error polling job status:', error);
           setSelectedOutfit(outfit);
           setIsLoading(false);
+          scrollToPreview();
         }
       };
       
@@ -163,6 +192,7 @@ function AppContent() {
       setTimeout(() => {
         setSelectedOutfit(outfit);
         setIsLoading(false);
+        scrollToPreview();
       }, 1500);
     }
   };
@@ -217,12 +247,14 @@ function AppContent() {
             </Card>
 
             {/* Preview Canvas */}
-            <PreviewCanvas
-              model={selectedModel}
-              outfit={selectedOutfit}
-              isLoading={isLoading}
-              jobStatus={jobStatus}
-            />
+            <div id="preview-canvas">
+              <PreviewCanvas
+                model={selectedModel}
+                outfit={selectedOutfit}
+                isLoading={isLoading}
+                jobStatus={jobStatus}
+              />
+            </div>
 
             {/* Quick Controls */}
             <Card className="p-3">
@@ -279,7 +311,7 @@ function AppContent() {
 
           {/* Preview Canvas - Desktop only (mobile has it in the single column) */}
           <div className="hidden lg:block">
-            <div className="h-[calc(100vh-8rem)]">
+            <div id="preview-canvas" className="h-[calc(100vh-8rem)]">
               <PreviewCanvas
                 model={selectedModel}
                 outfit={selectedOutfit}

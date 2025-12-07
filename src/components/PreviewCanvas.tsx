@@ -1,18 +1,8 @@
 import { useState } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
-import { Slider } from './ui/slider';
 import { Badge } from './ui/badge';
-import {
-  RotateCcw,
-  Download,
-  Share2,
-  Sun,
-  Palette,
-  Maximize2,
-  Sparkles,
-  Lightbulb
-} from 'lucide-react';
+import { RotateCcw, Download, Share2, Maximize2, Sparkles } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { apiService } from '../services/api';
 import type { Outfit } from './OutfitLibrary';
@@ -32,25 +22,12 @@ interface PreviewCanvasProps {
 }
 
 export function PreviewCanvas({ model, outfit, isLoading = false, jobStatus = null }: PreviewCanvasProps) {
-  const [lighting, setLighting] = useState([50]);
-  const [fit, setFit] = useState([50]);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStatus, setGenerationStatus] = useState<'queued' | 'processing' | 'succeeded' | 'failed' | null>(null);
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
 
-  // Use the generated image from the outfit prop (if available) instead of local state
-  // Check if the outfit image is a Cloudinary URL and not the original outfit image
-  const generatedImage = outfit?.image?.includes('cloudinary.com') &&
-                        outfit.image !== outfit.id &&
-                        !outfit.image.includes('unsplash.com') ? outfit.image : null;
-
-  const suggestions = [
-    "Try pairing this with warmer accessories",
-    "This style works great for evening events",
-    "Consider a different color for your skin tone"
-  ];
+  // Determine if we have a generated image
+  const generatedImage = (jobStatus === 'succeeded' && outfit?.image?.includes('cloudinary.com')) ? outfit.image : null;
 
   const handleGenerateImage = async () => {
     if (!model || !outfit) return;
@@ -59,27 +36,21 @@ export function PreviewCanvas({ model, outfit, isLoading = false, jobStatus = nu
     setGenerationStatus('queued');
     
     try {
-      // Call the actual AI generation API
       const job = await apiService.createGenerationJob(model.id, outfit.id);
-      
       setCurrentJobId(job.jobId);
       setGenerationStatus(job.status);
       
-      // Poll for job status
       const pollJobStatus = async () => {
         try {
           const status = await apiService.getJobStatus(job.jobId);
           setGenerationStatus(status.status);
           
           if (status.status === 'succeeded' && status.outputImage) {
-            // Note: The generated image will be available via the outfit prop
-            // when the parent component updates it
             setIsGenerating(false);
           } else if (status.status === 'failed') {
             console.error('Generation failed:', status.error);
             setIsGenerating(false);
           } else if (status.status === 'processing' || status.status === 'queued') {
-            // Continue polling
             setTimeout(pollJobStatus, 2000);
           }
         } catch (error) {
@@ -88,12 +59,9 @@ export function PreviewCanvas({ model, outfit, isLoading = false, jobStatus = nu
         }
       };
       
-      // Start polling
       setTimeout(pollJobStatus, 2000);
-      
     } catch (error) {
       console.error('Error creating generation job:', error);
-      // Fallback to simulation if API fails
       setTimeout(() => {
         setIsGenerating(false);
         setGenerationStatus('succeeded');
@@ -101,17 +69,8 @@ export function PreviewCanvas({ model, outfit, isLoading = false, jobStatus = nu
     }
   };
 
-  const handleReset = () => {
-    // Reset is handled by the parent component
-    setGenerationStatus(null);
-    setCurrentJobId(null);
-    // Note: The actual reset of the generated image is handled by the parent component
-    // when it clears the selected outfit
-  };
-
   const handleSave = () => {
     if (generatedImage) {
-      // Create a temporary link to download the image
       const link = document.createElement('a');
       link.href = generatedImage;
       link.download = `ai-generated-outfit-${Date.now()}.png`;
@@ -125,7 +84,6 @@ export function PreviewCanvas({ model, outfit, isLoading = false, jobStatus = nu
 
   const handleShare = () => {
     if (generatedImage) {
-      // Copy image URL to clipboard
       navigator.clipboard.writeText(generatedImage).then(() => {
         alert('Image URL copied to clipboard!');
       }).catch(() => {
@@ -136,6 +94,7 @@ export function PreviewCanvas({ model, outfit, isLoading = false, jobStatus = nu
     }
   };
 
+  // If no model is selected, show placeholder
   if (!model) {
     return (
       <Card className="aspect-[3/4] flex items-center justify-center bg-gradient-to-br from-pink-50 to-purple-50 border-2 border-dashed border-pink-200">
@@ -157,12 +116,10 @@ export function PreviewCanvas({ model, outfit, isLoading = false, jobStatus = nu
   return (
     <div className="space-y-4">
       {/* Preview Card */}
-      <Card className={`relative overflow-hidden transition-all duration-500 ${
-        isFullscreen ? 'fixed inset-4 z-50' : 'aspect-[3/4]'
-      }`}>
+      <Card className="relative overflow-hidden aspect-[3/4] shimmer">
         {/* Loading Overlay */}
         {(isLoading || isGenerating) && (
-          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
+          <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center">
             <div className="text-center space-y-4">
               <div className="relative">
                 <div className="w-12 h-12 border-4 border-pink-200 rounded-full animate-spin border-t-pink-500"></div>
@@ -190,7 +147,7 @@ export function PreviewCanvas({ model, outfit, isLoading = false, jobStatus = nu
           </div>
         )}
 
-        {/* Model Image or Generated Image */}
+        {/* Preview Content */}
         <div className="relative w-full h-full">
           {generatedImage ? (
             <ImageWithFallback
@@ -198,31 +155,16 @@ export function PreviewCanvas({ model, outfit, isLoading = false, jobStatus = nu
               alt={`AI Generated - ${model.name} wearing ${outfit?.name || 'outfit'}`}
               className="w-full h-full object-cover"
             />
+          ) : outfit ? (
+            // Shimmer placeholder
+            <div className="w-full h-full shimmer bg-gray-300" />
           ) : (
-            <>
-              <ImageWithFallback
-                src={model.image}
-                alt={model.name}
-                className="w-full h-full object-cover"
-              />
-              
-              {/* Outfit Overlay Effect */}
-              {outfit && (
-                <div className="absolute inset-0 bg-gradient-to-t from-pink-500/10 to-transparent mix-blend-overlay" />
-              )}
-            </>
+            // No outfit selected
+            <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+              <p className="text-gray-500 text-sm">Select an outfit to generate</p>
+            </div>
           )}
         </div>
-
-        {/* Fullscreen Toggle */}
-        <Button
-          variant="outline"
-          size="sm"
-          className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm"
-          onClick={() => setIsFullscreen(!isFullscreen)}
-        >
-          <Maximize2 className="w-4 h-4" />
-        </Button>
 
         {/* Model Info */}
         <div className="absolute bottom-4 left-4 right-4">
@@ -237,11 +179,7 @@ export function PreviewCanvas({ model, outfit, isLoading = false, jobStatus = nu
                 )}
               </div>
               {outfit && (
-                <Badge className={`${
-                  generatedImage
-                    ? 'bg-green-100 text-green-700 border-green-200'
-                    : 'bg-pink-100 text-pink-700 border-pink-200'
-                }`}>
+                <Badge className={generatedImage ? 'bg-green-100 text-green-700 border-green-200' : 'bg-pink-100 text-pink-700 border-pink-200'}>
                   {generatedImage ? 'AI Generated' : outfit.style}
                 </Badge>
               )}
@@ -250,35 +188,19 @@ export function PreviewCanvas({ model, outfit, isLoading = false, jobStatus = nu
         </div>
       </Card>
 
-
       {/* Action Buttons */}
       <div className="grid grid-cols-4 gap-2">
         {generatedImage ? (
           <>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-gray-600"
-              onClick={handleReset}
-            >
+            <Button variant="outline" size="sm" className="text-gray-600">
               <RotateCcw className="w-4 h-4 mr-1" />
               Reset
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-gray-600"
-              onClick={handleSave}
-            >
+            <Button variant="outline" size="sm" className="text-gray-600" onClick={handleSave}>
               <Download className="w-4 h-4 mr-1" />
               Save
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-gray-600"
-              onClick={handleShare}
-            >
+            <Button variant="outline" size="sm" className="text-gray-600" onClick={handleShare}>
               <Share2 className="w-4 h-4 mr-1" />
               Share
             </Button>
@@ -299,21 +221,11 @@ export function PreviewCanvas({ model, outfit, isLoading = false, jobStatus = nu
               <RotateCcw className="w-4 h-4 mr-1" />
               Reset
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-gray-600"
-              onClick={handleSave}
-            >
+            <Button variant="outline" size="sm" className="text-gray-600" onClick={handleSave}>
               <Download className="w-4 h-4 mr-1" />
               Save
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-gray-600"
-              onClick={handleShare}
-            >
+            <Button variant="outline" size="sm" className="text-gray-600" onClick={handleShare}>
               <Share2 className="w-4 h-4 mr-1" />
               Share
             </Button>

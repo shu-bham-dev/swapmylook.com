@@ -5,20 +5,28 @@ import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
-import { Progress } from '../ui/progress';
-import { 
-  Heart, 
-  Download, 
-  Share2, 
-  Trash2, 
-  Star, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '../ui/dialog';
+import {
+  Heart,
+  Download,
+  Share2,
+  Trash2,
+  Star,
   Image as ImageIcon,
   User,
   Shirt,
   Sparkles,
   Filter,
   Grid,
-  List
+  List,
+  Repeat
 } from 'lucide-react';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { apiService } from '../../services/api';
@@ -51,6 +59,7 @@ interface OutfitsStats {
     byType: any;
   };
   favorites: number;
+  generationAttempts: number;
 }
 
 interface MyHistoryPageProps {
@@ -63,8 +72,12 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('all');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [outfitToDelete, setOutfitToDelete] = useState<Outfit | null>(null);
 
   useEffect(() => {
     loadOutfits();
@@ -113,21 +126,29 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
     }
   };
 
-  const handleDeleteOutfit = async (outfitId: string) => {
-    if (!confirm('Are you sure you want to delete this image? This action cannot be undone.')) {
-      return;
-    }
-
+  const performDeleteOutfit = async (outfitId: string) => {
     try {
       await apiService.deleteOutfit(outfitId);
       // Remove from local state
       setOutfits(prev => prev.filter(outfit => outfit.id !== outfitId));
       // Reload stats
       loadStats();
+      // Clear outfitToDelete
+      setOutfitToDelete(null);
     } catch (err) {
       console.error('Failed to delete outfit:', err);
       alert('Failed to delete image. Please try again.');
     }
+  };
+
+  const openDeleteDialog = (outfit: Outfit) => {
+    setOutfitToDelete(outfit);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleImageClick = (outfit: Outfit) => {
+    setSelectedOutfit(outfit);
+    setIsDialogOpen(true);
   };
 
   const getTypeIcon = (type: string) => {
@@ -198,7 +219,7 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
         {/* Stats Overview */}
         {stats && (
           <Card className="p-6 mb-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
               <div className="text-center">
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <ImageIcon className="w-5 h-5 text-blue-600" />
@@ -206,7 +227,7 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
                 </div>
                 <div className="text-sm text-muted-foreground">Total Images</div>
               </div>
-              
+               
               <div className="text-center">
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <User className="w-5 h-5 text-blue-600" />
@@ -214,7 +235,7 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
                 </div>
                 <div className="text-sm text-muted-foreground">Models</div>
               </div>
-              
+               
               <div className="text-center">
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <Shirt className="w-5 h-5 text-green-600" />
@@ -222,7 +243,7 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
                 </div>
                 <div className="text-sm text-muted-foreground">Outfits</div>
               </div>
-              
+               
               <div className="text-center">
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <Sparkles className="w-5 h-5 text-purple-600" />
@@ -230,42 +251,32 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
                 </div>
                 <div className="text-sm text-muted-foreground">AI Generated</div>
               </div>
+
+              <div className="text-center">
+                <div className="flex items-center justify-center space-x-2 mb-2">
+                  <Repeat className="w-5 h-5 text-orange-600" />
+                  <div className="text-2xl font-bold text-orange-600">{stats.generationAttempts}</div>
+                </div>
+                <div className="text-sm text-muted-foreground">Generation Attempts</div>
+              </div>
             </div>
 
             <Separator className="my-4" />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">Storage Usage</span>
-                  <span className="text-sm text-muted-foreground">
-                    {formatFileSize(stats.storageUsage.totalBytes)}
-                  </span>
-                </div>
-                <Progress 
-                  value={(stats.storageUsage.totalBytes / (100 * 1024 * 1024)) * 100} 
-                  className="h-2"
-                />
-                <div className="text-xs text-muted-foreground mt-1">
-                  {Math.round(stats.storageUsage.totalBytes / (1024 * 1024))}MB of 100MB used
-                </div>
+            <div className="flex items-center justify-center space-x-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-pink-600">{stats.favorites}</div>
+                <div className="text-sm text-muted-foreground">Favorites</div>
               </div>
-
-              <div className="flex items-center space-x-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-pink-600">{stats.favorites}</div>
-                  <div className="text-sm text-muted-foreground">Favorites</div>
-                </div>
-                <Button
-                  variant={favoritesOnly ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setFavoritesOnly(!favoritesOnly)}
-                  className={favoritesOnly ? "bg-pink-500 hover:bg-pink-600 text-white" : ""}
-                >
-                  <Star className={`w-4 h-4 mr-2 ${favoritesOnly ? 'fill-white' : ''}`} />
-                  {favoritesOnly ? 'Show All' : 'Show Favorites'}
-                </Button>
-              </div>
+              <Button
+                variant={favoritesOnly ? "default" : "outline"}
+                size="sm"
+                onClick={() => setFavoritesOnly(!favoritesOnly)}
+                className={favoritesOnly ? "bg-pink-500 hover:bg-pink-600 text-white" : ""}
+              >
+                <Star className={`w-4 h-4 mr-2 ${favoritesOnly ? 'fill-white' : ''}`} />
+                {favoritesOnly ? 'Show All' : 'Show Favorites'}
+              </Button>
             </div>
           </Card>
         )}
@@ -294,6 +305,14 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
           </Tabs>
 
           <div className="flex items-center space-x-2">
+             <Button
+              variant={viewMode === 'list' ? "default" : "outline"}
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className={viewMode === 'list' ? "bg-pink-500 hover:bg-pink-600 text-white" : ""}
+            >
+              <List className="w-4 h-4" />
+            </Button>
             <Button
               variant={viewMode === 'grid' ? "default" : "outline"}
               size="sm"
@@ -302,14 +321,7 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
             >
               <Grid className="w-4 h-4" />
             </Button>
-            <Button
-              variant={viewMode === 'list' ? "default" : "outline"}
-              size="sm"
-              onClick={() => setViewMode('list')}
-              className={viewMode === 'list' ? "bg-pink-500 hover:bg-pink-600 text-white" : ""}
-            >
-              <List className="w-4 h-4" />
-            </Button>
+           
           </div>
         </div>
 
@@ -331,191 +343,309 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
         )}
 
         {/* Outfits Grid/List */}
-        {outfits.length === 0 ? (
-          <Card className="p-12 text-center">
-            <ImageIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No outfits found</h3>
-            <p className="text-muted-foreground mb-4">
-              {favoritesOnly 
-                ? "You haven't marked any images as favorites yet."
-                : activeTab === 'all'
-                ? "You haven't uploaded any models, outfits, or generated any AI images yet."
-                : `You haven't uploaded any ${activeTab}s yet.`
-              }
-            </p>
-            {activeTab === 'model' || activeTab === 'outfit' ? (
-              <Button
-                onClick={() => onPageChange('home')}
-                className="bg-pink-500 hover:bg-pink-600 text-white"
-              >
-                Go to Style Studio
-              </Button>
-            ) : null}
-          </Card>
-        ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {outfits.map((outfit) => (
-              <Card key={outfit.id} className="overflow-hidden group hover:shadow-lg transition-all">
-                <div className="aspect-[3/4] relative">
-                  <div className="w-full h-full">
-                    <ImageWithFallback
-                      src={outfit.url}
-                      alt={`${outfit.type} image`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  
-                  {/* Overlay Actions */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="absolute inset-0 flex items-center justify-center space-x-2">
-                      <Button 
-                        size="sm" 
-                        variant="secondary"
-                        onClick={() => window.open(outfit.url, '_blank')}
-                      >
-                        <Download className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="secondary"
-                        onClick={() => handleFavoriteToggle(outfit.id, outfit.favorite)}
-                      >
-                        <Heart className={`w-4 h-4 ${outfit.favorite ? 'fill-red-500 text-red-500' : ''}`} />
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="secondary"
-                        onClick={() => handleDeleteOutfit(outfit.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Type Badge */}
-                  <Badge 
-                    variant="outline" 
-                    className={`absolute top-2 left-2 ${getTypeColor(outfit.type)}`}
-                  >
-                    {getTypeIcon(outfit.type)}
-                    <span className="ml-1 capitalize">{outfit.type}</span>
-                  </Badge>
-
-                  {/* Favorite Heart */}
-                  {outfit.favorite && (
-                    <Heart className="absolute top-2 right-2 w-5 h-5 text-red-500 fill-red-500" />
-                  )}
-                </div>
-                
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm font-medium truncate">
-                      {outfit.metadata?.filename || `Image ${outfit.id.slice(-6)}`}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {formatFileSize(outfit.sizeBytes)}
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-muted-foreground">
-                      {formatDate(outfit.createdAt)}
-                    </div>
-                    {outfit.tags.length > 0 && (
-                      <Badge variant="outline" className="text-xs">
-                        {outfit.tags[0]}
-                        {outfit.tags.length > 1 && ` +${outfit.tags.length - 1}`}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {outfits.map((outfit) => (
-              <Card key={outfit.id} className="p-4 hover:shadow-md transition-shadow">
-                <div className="flex items-start space-x-4">
-                  <div className="w-20 h-20 flex-shrink-0">
-                    <div className="w-full h-full">
+        <div className="relative">
+          {loading && (
+            <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
+            </div>
+          )}
+          {outfits.length === 0 ? (
+            <Card className="p-12 text-center">
+              <ImageIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No outfits found</h3>
+              <p className="text-muted-foreground mb-4">
+                {favoritesOnly
+                  ? "You haven't marked any images as favorites yet."
+                  : activeTab === 'all'
+                  ? "You haven't uploaded any models, outfits, or generated any AI images yet."
+                  : `You haven't uploaded any ${activeTab}s yet.`
+                }
+              </p>
+              {activeTab === 'model' || activeTab === 'outfit' ? (
+                <Button
+                  onClick={() => onPageChange('home')}
+                  className="bg-pink-500 hover:bg-pink-600 text-white"
+                >
+                  Go to Style Studio
+                </Button>
+              ) : null}
+            </Card>
+          ) : viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {outfits.map((outfit) => (
+                <Card key={outfit.id} className="overflow-hidden group hover:shadow-lg transition-all">
+                  <div className="aspect-[3/4] relative">
+                    <div className="w-full h-full cursor-pointer" onClick={() => handleImageClick(outfit)}>
                       <ImageWithFallback
                         src={outfit.url}
                         alt={`${outfit.type} image`}
-                        className="w-full h-full object-cover rounded"
+                        className="w-full h-full object-cover"
                       />
                     </div>
+                    
+                    {/* Overlay Actions */}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute inset-0 flex items-center justify-center space-x-2">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => window.open(outfit.url, '_blank')}
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleFavoriteToggle(outfit.id, outfit.favorite)}
+                        >
+                          <Heart className={`w-4 h-4 ${outfit.favorite ? 'fill-red-500 text-red-500' : ''}`} />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => openDeleteDialog(outfit)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Type Badge */}
+                    <Badge
+                      variant="outline"
+                      className={`absolute top-2 left-2 ${getTypeColor(outfit.type)}`}
+                    >
+                      {getTypeIcon(outfit.type)}
+                      <span className="ml-1 capitalize">{outfit.type}</span>
+                    </Badge>
+
+                    {/* Favorite Heart */}
+                    {outfit.favorite && (
+                      <Heart className="absolute top-2 right-2 w-5 h-5 text-red-500 fill-red-500" />
+                    )}
                   </div>
                   
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <Badge variant="outline" className={getTypeColor(outfit.type)}>
-                        {getTypeIcon(outfit.type)}
-                        <span className="ml-1 capitalize">{outfit.type}</span>
-                      </Badge>
-                      {outfit.favorite && (
-                        <Heart className="w-4 h-4 text-red-500 fill-red-500" />
-                      )}
-                    </div>
-                    
+                  <div className="p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <div className="font-medium truncate">
+                      <div className="text-sm font-medium truncate">
                         {outfit.metadata?.filename || `Image ${outfit.id.slice(-6)}`}
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-xs text-muted-foreground">
                         {formatFileSize(outfit.sizeBytes)}
                       </div>
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-xs text-muted-foreground">
                         {formatDate(outfit.createdAt)}
                       </div>
                       {outfit.tags.length > 0 && (
-                        <div className="flex space-x-1">
-                          {outfit.tags.slice(0, 2).map((tag, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                          {outfit.tags.length > 2 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{outfit.tags.length - 2}
-                            </Badge>
-                          )}
-                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {outfit.tags[0]}
+                          {outfit.tags.length > 1 && ` +${outfit.tags.length - 1}`}
+                        </Badge>
                       )}
                     </div>
                   </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => window.open(outfit.url, '_blank')}
-                    >
-                      <Download className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleFavoriteToggle(outfit.id, outfit.favorite)}
-                    >
-                      <Heart className={`w-4 h-4 ${outfit.favorite ? 'fill-red-500 text-red-500' : ''}`} />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleDeleteOutfit(outfit.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {outfits.map((outfit) => (
+                <Card key={outfit.id} className="p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-start space-x-4">
+                    <div className="w-20 h-20 flex-shrink-0">
+                      <div className="w-full h-full cursor-pointer" onClick={() => handleImageClick(outfit)}>
+                        <ImageWithFallback
+                          src={outfit.url}
+                          alt={`${outfit.type} image`}
+                          className="w-full h-full object-cover rounded"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Badge variant="outline" className={getTypeColor(outfit.type)}>
+                          {getTypeIcon(outfit.type)}
+                          <span className="ml-1 capitalize">{outfit.type}</span>
+                        </Badge>
+                        {outfit.favorite && (
+                          <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="font-medium truncate">
+                          {outfit.metadata?.filename || `Image ${outfit.id.slice(-6)}`}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-muted-foreground">
+                          {formatDate(outfit.createdAt)}
+                        </div>
+                        {outfit.tags.length > 0 && (
+                          <div className="flex space-x-1">
+                            {outfit.tags.slice(0, 2).map((tag, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                            {outfit.tags.length > 2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{outfit.tags.length - 2}
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => window.open(outfit.url, '_blank')}
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleFavoriteToggle(outfit.id, outfit.favorite)}
+                      >
+                        <Heart className={`w-4 h-4 ${outfit.favorite ? 'fill-red-500 text-red-500' : ''}`} />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openDeleteDialog(outfit)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Image Detail Dialog */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Image Details</DialogTitle>
+              <DialogDescription>
+                View and manage your image.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="relative aspect-[3/4]">
+                {selectedOutfit && (
+                  <ImageWithFallback
+                    src={selectedOutfit.url}
+                    alt={`${selectedOutfit.type} image`}
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                )}
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold">Metadata</h3>
+                  <div className="text-sm text-muted-foreground">
+                    <p>Type: {selectedOutfit?.type}</p>
+                    <p>Size: {selectedOutfit && formatFileSize(selectedOutfit.sizeBytes)}</p>
+                    <p>Uploaded: {selectedOutfit && formatDate(selectedOutfit.createdAt)}</p>
+                    <p>Tags: {selectedOutfit?.tags.join(', ') || 'None'}</p>
                   </div>
                 </div>
-              </Card>
-            ))}
-          </div>
-        )}
+                <div className="flex flex-col space-y-2">
+                  <Button
+                    onClick={() => selectedOutfit && window.open(selectedOutfit.url, '_blank')}
+                    className="w-full"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Download
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => selectedOutfit && handleFavoriteToggle(selectedOutfit.id, selectedOutfit.favorite)}
+                    className="w-full"
+                  >
+                    <Heart className={`w-4 h-4 mr-2 ${selectedOutfit?.favorite ? 'fill-red-500 text-red-500' : ''}`} />
+                    {selectedOutfit?.favorite ? 'Remove from Favorites' : 'Add to Favorites'}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => selectedOutfit && openDeleteDialog(selectedOutfit)}
+                    className="w-full"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Delete Image</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this image? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              {outfitToDelete && (
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-16 h-16 flex-shrink-0">
+                    <ImageWithFallback
+                      src={outfitToDelete.url}
+                      alt={`${outfitToDelete.type} image`}
+                      className="w-full h-full object-cover rounded"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium truncate">
+                      {outfitToDelete.metadata?.filename || `Image ${outfitToDelete.id.slice(-6)}`}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {formatFileSize(outfitToDelete.sizeBytes)} • {formatDate(outfitToDelete.createdAt)}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (outfitToDelete) {
+                    performDeleteOutfit(outfitToDelete.id);
+                  }
+                  setDeleteDialogOpen(false);
+                }}
+              >
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 // API service for communicating with the backend
-const API_BASE_URL = 'https://swapmylookcom-be-production.up.railway.app/api/v1';
-// const API_BASE_URL = 'http://localhost:3001/api/v1';
+// const API_BASE_URL = 'https://swapmylookcom-be-production.up.railway.app/api/v1';
+const API_BASE_URL = 'http://localhost:3001/api/v1';
 import { toast } from 'sonner';
 
 interface ApiResponse<T> {
@@ -71,17 +71,21 @@ export interface SettingsResponse {
 class ApiService {
   private authToken: string | null = null;
   private user: User | null = null;
+  private hasRedirected = false;
+  private hasQuotaRedirected = false;
 
   constructor() {
-    // Initialize with token from localStorage if available
-    this.authToken = localStorage.getItem('authToken');
-    const userData = localStorage.getItem('userData');
+    // Initialize with token from localStorage or sessionStorage
+    this.authToken = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+    let userData = localStorage.getItem('userData') || sessionStorage.getItem('userData');
     if (userData) {
       try {
         this.user = JSON.parse(userData);
       } catch (error) {
-        console.error('Failed to parse user data from localStorage:', error);
+        console.error('Failed to parse user data from storage:', error);
+        // Clean up corrupted data
         localStorage.removeItem('userData');
+        sessionStorage.removeItem('userData');
       }
     }
   }
@@ -101,12 +105,24 @@ class ApiService {
 
   /**
    * Set authentication token and user data
+   * @param rememberMe If true, store in localStorage (persistent). If false, store in sessionStorage (session-only).
    */
-  setAuthData(token: string, user: User) {
+  setAuthData(token: string, user: User, rememberMe: boolean = true) {
     this.authToken = token;
     this.user = user;
-    localStorage.setItem('authToken', token);
-    localStorage.setItem('userData', JSON.stringify(user));
+    if (rememberMe) {
+      localStorage.setItem('authToken', token);
+      localStorage.setItem('userData', JSON.stringify(user));
+      // Clear any session storage entries to avoid conflicts
+      sessionStorage.removeItem('authToken');
+      sessionStorage.removeItem('userData');
+    } else {
+      sessionStorage.setItem('authToken', token);
+      sessionStorage.setItem('userData', JSON.stringify(user));
+      // Clear any local storage entries to avoid conflicts
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userData');
+    }
   }
 
   /**
@@ -117,6 +133,8 @@ class ApiService {
     this.user = null;
     localStorage.removeItem('authToken');
     localStorage.removeItem('userData');
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('userData');
   }
 
   /**
@@ -163,13 +181,13 @@ class ApiService {
   /**
    * Login with email and password
    */
-  async login(email: string, password: string): Promise<{ token: string; user: User }> {
+  async login(email: string, password: string, rememberMe: boolean = false): Promise<{ token: string; user: User }> {
     const response = await this.request<{ token: string; user: User }>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, rememberMe }),
     });
 
-    this.setAuthData(response.token, response.user);
+    this.setAuthData(response.token, response.user, rememberMe);
     return response;
   }
 
@@ -268,11 +286,51 @@ class ApiService {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
         const errorMessage = errorData.error || `HTTP error! status: ${response.status}`;
         
-        // Show error toast for API errors
-        toast.error('API Error', {
-          description: errorMessage,
-          duration: 5000,
-        });
+        // Handle authentication errors (401/403) by clearing auth and redirecting to login
+        if (response.status === 401 || response.status === 403) {
+          // Clear authentication data
+          this.clearAuthData();
+          
+          // Show a specific toast for session expiration
+          if (!this.hasRedirected) {
+            toast.error('Session Expired', {
+              description: 'Your session has expired. Redirecting to login...',
+              duration: 3000,
+            });
+            this.hasRedirected = true;
+            
+            // Redirect to login page after a short delay
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 1500);
+          }
+          
+          // Throw a specific error to prevent further processing
+          throw new Error('Authentication required');
+        } else if (response.status === 429) {
+          // Handle quota exceeded - redirect to subscription page
+          if (!this.hasQuotaRedirected) {
+            toast.error('Quota Exceeded', {
+              description: 'Your monthly generation quota has been used up. Please upgrade your plan.',
+              duration: 4000,
+            });
+            this.hasQuotaRedirected = true;
+            
+            // Redirect to subscription page after a short delay
+            setTimeout(() => {
+              window.location.href = '/subscription';
+            }, 2000);
+          }
+          
+          // Throw a specific error to prevent further processing
+          throw new Error('Quota exceeded');
+        } else {
+          // Show error toast for other API errors
+          toast.error('API Error', {
+            description: errorMessage,
+            duration: 5000,
+          });
+        }
         
         throw new Error(errorMessage);
       }
@@ -439,6 +497,7 @@ class ApiService {
       byType: any;
     };
     favorites: number;
+    generationAttempts: number;
   }> {
     return this.request('/outfits/stats');
   }
