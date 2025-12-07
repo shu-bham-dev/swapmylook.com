@@ -5,14 +5,10 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { Badge } from '../ui/badge';
-import { Separator } from '../ui/separator';
-import { Switch } from '../ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import {
   User,
-  Settings,
   Lock,
   LogOut,
   Camera,
@@ -250,7 +246,7 @@ export function SettingsPage({ onPageChange }: SettingsPageProps) {
 
         {/* Settings Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 bg-pink-50">
+          <TabsList className="grid w-full grid-cols-2 bg-pink-50">
             <TabsTrigger value="profile" className="data-[state=active]:bg-pink-200 text-xs md:text-sm">
               <User className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
               Profile
@@ -258,10 +254,6 @@ export function SettingsPage({ onPageChange }: SettingsPageProps) {
             <TabsTrigger value="account" className="data-[state=active]:bg-pink-200 text-xs md:text-sm">
               <Lock className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
               Account
-            </TabsTrigger>
-            <TabsTrigger value="preferences" className="data-[state=active]:bg-pink-200 text-xs md:text-sm">
-              <Settings className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-              Preferences
             </TabsTrigger>
           </TabsList>
 
@@ -535,125 +527,6 @@ export function SettingsPage({ onPageChange }: SettingsPageProps) {
             </div>
           </TabsContent>
 
-          {/* Preferences Tab */}
-          <TabsContent value="preferences">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-6">App Preferences</h3>
-              <div className="space-y-6">
-                {/* Default Outfit Style */}
-                <div className="space-y-2">
-                  <Label htmlFor="defaultOutfitStyle">Default Outfit Style</Label>
-                  <Select
-                    value={formData?.preferences?.defaultOutfitStyle || 'casual'}
-                    onValueChange={(value: string) => setFormData(prev => ({
-                      ...prev,
-                      preferences: {
-                        ...prev?.preferences,
-                        defaultOutfitStyle: value,
-                        theme: prev?.preferences?.theme || 'light',
-                        notifications: prev?.preferences?.notifications ?? true,
-                        emailUpdates: prev?.preferences?.emailUpdates ?? false
-                      }
-                    }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select default style" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="casual">Casual</SelectItem>
-                      <SelectItem value="formal">Formal</SelectItem>
-                      <SelectItem value="street">Street</SelectItem>
-                      <SelectItem value="business">Business</SelectItem>
-                      <SelectItem value="athletic">Athletic</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Theme Preference */}
-                <div className="space-y-2">
-                  <Label htmlFor="theme">Theme</Label>
-                  <Select
-                    value={formData?.preferences?.theme || 'light'}
-                    onValueChange={(value: string) => setFormData(prev => ({
-                      ...prev,
-                      preferences: {
-                        ...prev?.preferences,
-                        theme: value,
-                        defaultOutfitStyle: prev?.preferences?.defaultOutfitStyle || 'casual',
-                        notifications: prev?.preferences?.notifications ?? true,
-                        emailUpdates: prev?.preferences?.emailUpdates ?? false
-                      }
-                    }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select theme" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="light">Light</SelectItem>
-                      <SelectItem value="dark">Dark</SelectItem>
-                      <SelectItem value="auto">Auto (System)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Separator />
-
-                {/* Notification Preferences */}
-                <div className="space-y-4">
-                  <h4 className="font-medium">Notification Preferences</h4>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Push Notifications</Label>
-                      <p className="text-xs text-muted-foreground">Receive notifications for new outfit suggestions</p>
-                    </div>
-                    <Switch
-                      checked={formData?.preferences?.notifications || true}
-                      onCheckedChange={(checked: boolean) => setFormData(prev => ({
-                        ...prev,
-                        preferences: {
-                          ...prev?.preferences,
-                          notifications: checked,
-                          defaultOutfitStyle: prev?.preferences?.defaultOutfitStyle || 'casual',
-                          theme: prev?.preferences?.theme || 'light',
-                          emailUpdates: prev?.preferences?.emailUpdates ?? false
-                        }
-                      }))}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Email Updates</Label>
-                      <p className="text-xs text-muted-foreground">Receive email updates and newsletters</p>
-                    </div>
-                    <Switch
-                      checked={formData?.preferences?.emailUpdates || false}
-                      onCheckedChange={(checked: boolean) => setFormData(prev => ({
-                        ...prev,
-                        preferences: {
-                          ...prev?.preferences,
-                          emailUpdates: checked,
-                          defaultOutfitStyle: prev?.preferences?.defaultOutfitStyle || 'casual',
-                          theme: prev?.preferences?.theme || 'light',
-                          notifications: prev?.preferences?.notifications ?? true
-                        }
-                      }))}
-                    />
-                  </div>
-                </div>
-
-                <Button
-                  onClick={handleProfileUpdate}
-                  disabled={isSaving}
-                  className="bg-pink-500 hover:bg-pink-600 text-white"
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  {isSaving ? 'Saving Preferences...' : 'Save Preferences'}
-                </Button>
-              </div>
-            </Card>
-          </TabsContent>
 
         </Tabs>
       </div>

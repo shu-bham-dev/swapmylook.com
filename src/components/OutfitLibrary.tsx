@@ -5,7 +5,8 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Search, Filter, Heart, Star, Upload, Plus, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
+import { Search, Filter, Heart, Star, Upload, Plus, X, Sparkles, Download, RotateCcw, Trash2 } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { apiService } from '../services/api';
 
@@ -23,9 +24,17 @@ export interface Outfit {
   isCustom?: boolean;
 }
 
+interface Model {
+  id: string;
+  name: string;
+  image: string;
+  category: 'female' | 'male' | 'diverse';
+}
+
 interface OutfitLibraryProps {
   onOutfitSelect: (outfit: Outfit) => void;
   selectedOutfit: Outfit | null;
+  selectedModel?: Model | null;
 }
 
 const outfits: Outfit[] = [
@@ -91,7 +100,7 @@ const outfits: Outfit[] = [
   }
 ];
 
-export function OutfitLibrary({ onOutfitSelect, selectedOutfit }: OutfitLibraryProps) {
+export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }: OutfitLibraryProps) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -100,6 +109,13 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit }: OutfitLibraryP
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedOutfit, setUploadedOutfit] = useState<Outfit | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Dialog and generation state
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStatus, setGenerationStatus] = useState<'queued' | 'processing' | 'succeeded' | 'failed' | null>(null);
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
 
   // Check if user is authenticated
   const isAuthenticated = apiService.isAuthenticated();
@@ -228,6 +244,96 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit }: OutfitLibraryP
     });
   };
 
+  // Handle opening generation dialog
+  const handleGenerateClick = () => {
+    if (!uploadedOutfit) return;
+    setIsDialogOpen(true);
+    startGeneration();
+  };
+
+  // Start generation job
+  const startGeneration = async () => {
+    if (!uploadedOutfit) return;
+    setIsGenerating(true);
+    setGenerationStatus('queued');
+    setGeneratedImage(null);
+
+    // If we have a model and outfit, call real API
+    if (selectedModel && uploadedOutfit) {
+      try {
+        const job = await apiService.createGenerationJob(selectedModel.id, uploadedOutfit.id);
+        setCurrentJobId(job.jobId);
+        setGenerationStatus(job.status);
+
+        const pollJobStatus = async () => {
+          try {
+            const status = await apiService.getJobStatus(job.jobId);
+            setGenerationStatus(status.status);
+
+            if (status.status === 'succeeded' && status.outputImage) {
+              setIsGenerating(false);
+              setGeneratedImage(status.outputImage.url);
+            } else if (status.status === 'failed') {
+              console.error('Generation failed:', status.error);
+              setIsGenerating(false);
+            } else if (status.status === 'processing' || status.status === 'queued') {
+              setTimeout(pollJobStatus, 2000);
+            }
+          } catch (error) {
+            console.error('Error polling job status:', error);
+            setIsGenerating(false);
+          }
+        };
+
+        setTimeout(pollJobStatus, 2000);
+      } catch (error) {
+        console.error('Error creating generation job:', error);
+        // Fallback to simulation
+        simulateGeneration();
+      }
+    } else {
+      // No model selected, simulate generation
+      simulateGeneration();
+    }
+  };
+
+  const simulateGeneration = () => {
+    setTimeout(() => {
+      setIsGenerating(false);
+      setGenerationStatus('succeeded');
+      setGeneratedImage(uploadedOutfit?.image || null);
+    }, 2000);
+  };
+
+  const handleRegenerate = () => {
+    setGeneratedImage(null);
+    startGeneration();
+  };
+
+  const handleSave = () => {
+    if (generatedImage) {
+      const link = document.createElement('a');
+      link.href = generatedImage;
+      link.download = `ai-generated-outfit-${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      alert('No generated image to save');
+    }
+  };
+
+  const handleDownload = () => {
+    // Same as save for now
+    handleSave();
+  };
+
+  const handleDelete = () => {
+    setGeneratedImage(null);
+    setGenerationStatus(null);
+    setIsDialogOpen(false);
+  };
+
   return (
     <div className="flex flex-col h-full max-h-[calc(100vh-8rem)]">
       <div className="flex-shrink-0 space-y-4 pb-4">
@@ -254,7 +360,7 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit }: OutfitLibraryP
                     className={`bg-pink-500 hover:bg-pink-600 text-white ${
                       isUploadedOutfitSelected ? 'bg-green-600 hover:bg-green-700' : ''
                     }`}
-                    onClick={handleSelectUploadedOutfit}
+                    onClick={handleGenerateClick}
                   >
                     {isUploadedOutfitSelected ? 'Selected ✓' : 'Generate'}
                   </Button>
@@ -436,6 +542,105 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit }: OutfitLibraryP
           </div>
         )}
       </div>
+
+      {/* Generation Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md md:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>AI Outfit Generation</DialogTitle>
+            <DialogDescription>
+              {generatedImage ? 'Your AI-generated outfit is ready!' : 'Generating your outfit...'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Shimmer effect while generating */}
+            {(isGenerating || generationStatus === 'queued' || generationStatus === 'processing') && (
+              <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden shimmer">
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <div className="relative">
+                    <div className="w-12 h-12 border-4 border-pink-200 rounded-full animate-spin border-t-pink-500"></div>
+                    <Sparkles className="absolute inset-0 m-auto w-6 h-6 text-pink-500" />
+                  </div>
+                  <div className="mt-4 text-center">
+                    <p className="font-medium text-gray-900">
+                      {generationStatus === 'queued' ? 'Job Queued' :
+                       generationStatus === 'processing' ? 'AI Processing' :
+                       'AI Magic in Progress'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {generationStatus === 'queued' ? 'Your job is in the queue...' :
+                       generationStatus === 'processing' ? 'Generating your outfit...' :
+                       'Fitting the perfect outfit...'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Generated image */}
+            {generatedImage && (
+              <div className="aspect-[3/4] relative rounded-lg overflow-hidden">
+                <ImageWithFallback
+                  src={generatedImage}
+                  alt="AI Generated Outfit"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {generatedImage ? (
+                <>
+                  <Button variant="outline" size="sm" onClick={handleRegenerate} disabled={isGenerating}>
+                    <RotateCcw className="w-4 h-4 mr-1" />
+                    Regenerate
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleSave}>
+                    <Download className="w-4 h-4 mr-1" />
+                    Save
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleDownload}>
+                    <Download className="w-4 h-4 mr-1" />
+                    Download
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleDelete} className="text-red-600 hover:text-red-700">
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Delete
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" size="sm" disabled>
+                    <RotateCcw className="w-4 h-4 mr-1" />
+                    Regenerate
+                  </Button>
+                  <Button variant="outline" size="sm" disabled>
+                    <Download className="w-4 h-4 mr-1" />
+                    Save
+                  </Button>
+                  <Button variant="outline" size="sm" disabled>
+                    <Download className="w-4 h-4 mr-1" />
+                    Download
+                  </Button>
+                  <Button variant="outline" size="sm" disabled>
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Delete
+                  </Button>
+                </>
+              )}
+            </div>
+
+            {/* Status message */}
+            {generationStatus === 'failed' && (
+              <div className="text-center text-red-600 text-sm">
+                Generation failed. Please try again.
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

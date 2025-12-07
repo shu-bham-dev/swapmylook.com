@@ -30,6 +30,22 @@ import {
 } from 'lucide-react';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { apiService } from '../../services/api';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationEllipsis,
+} from '../ui/pagination';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
 
 interface Outfit {
   id: string;
@@ -78,20 +94,31 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [outfitToDelete, setOutfitToDelete] = useState<Outfit | null>(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [pagination, setPagination] = useState<{ page: number; limit: number; total: number; pages: number } | null>(null);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, favoritesOnly]);
 
   useEffect(() => {
     loadOutfits();
     loadStats();
-  }, [activeTab, favoritesOnly]);
+  }, [activeTab, favoritesOnly, page, limit]);
 
   const loadOutfits = async () => {
     try {
       setLoading(true);
       const response = await apiService.getOutfits({
         type: activeTab === 'all' ? 'all' : activeTab as 'model' | 'outfit' | 'output' | 'all',
-        favorite: favoritesOnly || undefined
+        favorite: favoritesOnly || undefined,
+        page,
+        limit
       });
       setOutfits(response.outfits);
+      setPagination(response.pagination);
       setError(null);
     } catch (err) {
       console.error('Failed to load outfits:', err);
@@ -532,6 +559,62 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
             </div>
           )}
         </div>
+
+        {/* Pagination */}
+        {pagination && pagination.pages > 1 && (
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-muted-foreground">Items per page:</span>
+              <Select value={limit.toString()} onValueChange={(value: string) => setLimit(Number(value))}>
+                <SelectTrigger className="w-20">
+                  <SelectValue placeholder={limit} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1</SelectItem>
+                  <SelectItem value="2">2</SelectItem>
+                  <SelectItem value="3">3</SelectItem>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="30">30</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    size="default"
+                    onClick={() => setPage(prev => Math.max(prev - 1, 1))}
+                    className={page === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+                {Array.from({ length: pagination.pages }, (_, i) => i + 1).map((p) => (
+                  <PaginationItem key={p}>
+                    <PaginationLink
+                      size="default"
+                      isActive={page === p}
+                      onClick={() => setPage(p)}
+                      className="cursor-pointer"
+                    >
+                      {p}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    size="default"
+                    onClick={() => setPage(prev => Math.min(prev + 1, pagination.pages))}
+                    className={page === pagination.pages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+            <div className="text-sm text-muted-foreground">
+              Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, pagination.total)} of {pagination.total} items
+            </div>
+          </div>
+        )}
 
         {/* Image Detail Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

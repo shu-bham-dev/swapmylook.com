@@ -244,7 +244,7 @@ export function LoginPage({ onLogin, onPageChange }: LoginPageProps) {
         <div className="text-center space-y-2">
           <div className="flex items-center justify-center space-x-1 text-sm text-muted-foreground">
             <Heart className="w-4 h-4 text-pink-500" />
-            <span>Trusted by 50,000+ fashion enthusiasts</span>
+            <span>Trusted by 10,000+ fashion enthusiasts</span>
           </div>
           <p className="text-xs text-muted-foreground">
             By signing up, you agree to our{' '}

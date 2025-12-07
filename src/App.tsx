@@ -3,15 +3,13 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocat
 import { Navigation } from './components/Navigation';
 import { ModelSelection } from './components/ModelSelection';
 import { OutfitLibrary, type Outfit } from './components/OutfitLibrary';
-import { PreviewCanvas } from './components/PreviewCanvas';
+
 import { ControlsPanel } from './components/ControlsPanel';
 import { SEO, homePageSEO } from './components/SEO';
+import { Footer } from './components/Footer';
 import { Button } from './components/ui/button';
 import { Card } from './components/ui/card';
-import { Separator } from './components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './components/ui/accordion';
-import { Sparkles, Menu, X } from 'lucide-react';
 import { apiService } from './services/api';
 import { Toaster, toast } from 'sonner';
 
@@ -114,21 +112,9 @@ function AppContent() {
     setIsLoading(true);
     setJobStatus('queued');
     
-    // Scroll to preview canvas after a short delay
+    // Scroll to preview canvas after a short delay (no-op since preview canvas removed)
     const scrollToPreview = () => {
-      setTimeout(() => {
-        const element = document.getElementById('preview-canvas');
-        if (element) {
-          console.log('Scrolling to preview canvas', element);
-          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          // Additional fallback: scroll by offset if needed
-          const yOffset = -80; // adjust for fixed header if any
-          const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
-          window.scrollTo({ top: y, behavior: 'smooth' });
-        } else {
-          console.warn('Preview canvas element not found');
-        }
-      }, 200);
+      // Do nothing
     };
     
     try {
@@ -227,7 +213,7 @@ function AppContent() {
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Mobile Single Screen Layout */}
           <div className="lg:hidden space-y-3">
             {/* Model Selection */}
@@ -243,51 +229,12 @@ function AppContent() {
               <OutfitLibrary
                 onOutfitSelect={handleOutfitSelect}
                 selectedOutfit={selectedOutfit}
+                selectedModel={selectedModel}
               />
             </Card>
 
-            {/* Preview Canvas */}
-            <div id="preview-canvas">
-              <PreviewCanvas
-                model={selectedModel}
-                outfit={selectedOutfit}
-                isLoading={isLoading}
-                jobStatus={jobStatus}
-              />
-            </div>
+            
 
-            {/* Quick Controls */}
-            <Card className="p-3">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-medium text-sm">Quick Actions</h3>
-                <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleUndo}
-                    disabled={!canUndo}
-                    className="text-gray-600 text-xs"
-                  >
-                    Undo
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRedo}
-                    disabled={!canRedo}
-                    className="text-gray-600 text-xs"
-                  >
-                    Redo
-                  </Button>
-                </div>
-              </div>
-              <Separator className="mb-3" />
-              <div className="grid grid-cols-3 gap-2">
-                <Button variant="outline" size="sm" className="text-xs">Save</Button>
-                <Button variant="outline" size="sm" className="text-xs">Download</Button>
-                <Button variant="outline" size="sm" className="text-xs">Share</Button>
-              </div>
-            </Card>
           </div>
 
           {/* Desktop Layout - First Row */}
@@ -305,25 +252,16 @@ function AppContent() {
               <OutfitLibrary
                 onOutfitSelect={handleOutfitSelect}
                 selectedOutfit={selectedOutfit}
+                selectedModel={selectedModel}
               />
             </Card>
           </div>
 
-          {/* Preview Canvas - Desktop only (mobile has it in the single column) */}
-          <div className="hidden lg:block">
-            <div id="preview-canvas" className="h-[calc(100vh-8rem)]">
-              <PreviewCanvas
-                model={selectedModel}
-                outfit={selectedOutfit}
-                isLoading={isLoading}
-                jobStatus={jobStatus}
-              />
-            </div>
-          </div>
+          
 
           {/* Controls Panel - Second Row (only show when outfit is selected) */}
           {selectedOutfit && (
-            <div className="hidden lg:block lg:col-span-3">
+            <div className="hidden lg:block lg:col-span-2">
               <ControlsPanel
                 onUndo={handleUndo}
                 onRedo={handleRedo}
@@ -403,7 +341,7 @@ function AppContent() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <Card className="overflow-hidden hover:shadow-lg transition-shadow">
             <img
-              src="/assests/images/acc-what1.jpeg"
+              src="/images/acc-what1.jpeg"
               alt="AI outfit transformation example"
               className="w-full h-48 object-cover"
             />
@@ -417,7 +355,7 @@ function AppContent() {
 
           <Card className="overflow-hidden hover:shadow-lg transition-shadow">
             <img
-              src="/assests/images/acc-what2.webp"
+              src="/images/acc-what2.webp"
               alt="AI color transformation example"
               className="w-full h-48 object-cover"
             />
@@ -431,7 +369,7 @@ function AppContent() {
 
           <Card className="overflow-hidden hover:shadow-lg transition-shadow">
             <img
-              src="/assests/images/acc-what3.webp"
+              src="/images/acc-what3.webp"
               alt="AI seasonal style transformation"
               className="w-full h-48 object-cover"
             />
@@ -603,6 +541,9 @@ function AppContent() {
         } />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+
+      {/* Footer - show on all pages except login */}
+      {currentPage !== 'login' && <Footer />}
 
       {/* Toast Notifications */}
       <Toaster

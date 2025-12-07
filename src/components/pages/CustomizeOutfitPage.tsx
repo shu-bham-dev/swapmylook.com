@@ -23,20 +23,20 @@ interface CustomizeOutfitPageProps {
 export function CustomizeOutfitPage({ onPageChange }: CustomizeOutfitPageProps) {
   const beforeAfterExamples = [
     {
-      before: '/assests/images/acc-what1.jpeg',
-      after: '/assests/images/acc-what2.webp',
+      before: '/images/acc-what1.jpeg',
+      after: '/images/acc-what2.webp',
       title: 'Casual to Formal Transformation',
       description: 'See how our AI outfit changer can transform a simple casual look into elegant formal wear with perfect fit and lighting matching.'
     },
     {
-      before: '/assests/images/acc-what3.webp',
-      after: '/assests/images/acc-what4.webp',
+      before: '/images/acc-what3.webp',
+      after: '/images/acc-what4.webp',
       title: 'Color and Style Makeover',
       description: 'Watch as our AI change outfit technology completely revamps the color scheme and style while maintaining natural proportions.'
     },
     {
-      before: '/assests/images/acc-what5.webp',
-      after: '/assests/images/acc-what1.jpeg',
+      before: '/images/acc-what5.webp',
+      after: '/images/acc-what1.jpeg',
       title: 'Seasonal Style Switch',
       description: 'Experience seamless seasonal transitions with our AI clothing changer, adapting outfits to different weather and occasions.'
     }

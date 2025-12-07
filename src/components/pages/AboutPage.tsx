@@ -1,23 +1,18 @@
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
 import { 
   Heart, 
   Users, 
   Sparkles, 
   Target, 
-  Award, 
   Zap,
-  Globe,
   Camera,
   Palette,
   Shield,
   TrendingUp,
   Star,
-  CheckCircle,
   ArrowRight
 } from 'lucide-react';
-import { ImageWithFallback } from '../figma/ImageWithFallback';
 
 interface AboutPageProps {
   onPageChange: (page: string) => void;
@@ -25,37 +20,10 @@ interface AboutPageProps {
 
 export function AboutPage({ onPageChange }: AboutPageProps) {
   const stats = [
-    { number: '50K+', label: 'Happy Users', icon: Users },
+    { number: '10K+', label: 'Happy Users', icon: Users },
     { number: '1M+', label: 'Outfits Visualized', icon: Camera },
     { number: '500+', label: 'Outfit Styles', icon: Palette },
     { number: '99.9%', label: 'Uptime', icon: Zap }
-  ];
-
-  const teamMembers = [
-    {
-      name: 'Sarah Chen',
-      role: 'CEO & Co-Founder',
-      image: 'https://images.unsplash.com/photo-1494790108755-2616b612b47c?w=400&h=400&fit=crop',
-      bio: 'Former fashion director with 10+ years in the industry. Passionate about democratizing fashion through technology.'
-    },
-    {
-      name: 'Marcus Rodriguez',
-      role: 'CTO & Co-Founder',
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop',
-      bio: 'AI researcher and tech entrepreneur. Leading the development of our cutting-edge visualization algorithms.'
-    },
-    {
-      name: 'Emily Zhang',
-      role: 'Head of Design',
-      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop',
-      bio: 'Award-winning UX designer focused on creating intuitive and beautiful fashion experiences.'
-    },
-    {
-      name: 'David Park',
-      role: 'VP of Engineering',
-      image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop',
-      bio: 'Full-stack engineer passionate about building scalable platforms that empower creativity.'
-    }
   ];
 
   const values = [
@@ -85,38 +53,6 @@ export function AboutPage({ onPageChange }: AboutPageProps) {
     }
   ];
 
-  const milestones = [
-    {
-      year: '2022',
-      title: 'Company Founded',
-      description: 'Sarah and Marcus launched SwapMyLook with a vision to revolutionize fashion visualization.',
-      icon: Sparkles
-    },
-    {
-      year: '2023',
-      title: 'AI Breakthrough',
-      description: 'Developed proprietary AI technology for realistic outfit visualization with 95% accuracy.',
-      icon: Zap
-    },
-    {
-      year: '2023',
-      title: '10K Users',
-      description: 'Reached our first 10,000 users within 6 months of launch.',
-      icon: Users
-    },
-    {
-      year: '2024',
-      title: 'Series A Funding',
-      description: 'Raised $15M Series A to accelerate product development and global expansion.',
-      icon: TrendingUp
-    },
-    {
-      year: '2024',
-      title: '50K+ Community',
-      description: 'Growing community of fashion enthusiasts from over 100 countries.',
-      icon: Globe
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
@@ -231,13 +167,6 @@ export function AboutPage({ onPageChange }: AboutPageProps) {
               >
                 Get Started Free
                 <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => onPageChange('help')}
-                className="border-white text-white hover:bg-white/10"
-              >
-                Learn More
               </Button>
             </div>
           </div>

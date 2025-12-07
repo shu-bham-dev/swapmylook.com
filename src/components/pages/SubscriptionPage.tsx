@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
 import { Progress } from '../ui/progress';
 import {
@@ -12,13 +11,9 @@ import {
   Zap,
   Star,
   Users,
-  Infinity,
   CreditCard,
   Shield,
-  Heart,
-  Download,
-  Palette,
-  Camera
+  Heart
 } from 'lucide-react';
 import { apiService } from '../../services/api.ts';
 import { toast } from 'sonner';
@@ -69,7 +64,6 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
 
   const handleUpgrade = async (planId: string) => {
     if (planId === 'free') {
-      // Already on free plan or downgrading
       return;
     }
 
@@ -77,7 +71,7 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
       setSelectedPlan(planId);
       await apiService.upgradeSubscription(planId, billingCycle);
       toast.success(`Successfully upgraded to ${planId} plan`);
-      await fetchSubscriptionData(); // Refresh data
+      await fetchSubscriptionData();
     } catch (error) {
       console.error('Failed to upgrade subscription:', error);
       toast.error('Failed to upgrade subscription');
@@ -88,7 +82,7 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
     try {
       await apiService.cancelSubscription();
       toast.success('Subscription cancelled successfully');
-      await fetchSubscriptionData(); // Refresh data
+      await fetchSubscriptionData();
     } catch (error) {
       console.error('Failed to cancel subscription:', error);
       toast.error('Failed to cancel subscription');
@@ -300,80 +294,6 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
           )}
         </div>
 
-        {/* Feature Comparison */}
-        <Card className="p-6 mb-8">
-          <h3 className="text-lg font-semibold mb-6 text-center">Compare All Features</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4">Features</th>
-                  <th className="text-center py-3 px-4">Free</th>
-                  <th className="text-center py-3 px-4">Basic</th>
-                  <th className="text-center py-3 px-4 bg-pink-50">Premium</th>
-                  <th className="text-center py-3 px-4">Pro</th>
-                </tr>
-              </thead>
-              <tbody className="text-sm">
-                <tr className="border-b">
-                  <td className="py-3 px-4">Monthly Visualizations</td>
-                  <td className="text-center py-3 px-4">1</td>
-                  <td className="text-center py-3 px-4">10</td>
-                  <td className="text-center py-3 px-4 bg-pink-50">50</td>
-                  <td className="text-center py-3 px-4">100</td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-3 px-4">HD Quality</td>
-                  <td className="text-center py-3 px-4">
-                    <X className="w-4 h-4 mx-auto text-red-500" />
-                  </td>
-                  <td className="text-center py-3 px-4">
-                    <X className="w-4 h-4 mx-auto text-red-500" />
-                  </td>
-                  <td className="text-center py-3 px-4 bg-pink-50">
-                    <Check className="w-4 h-4 mx-auto text-green-500" />
-                  </td>
-                  <td className="text-center py-3 px-4">
-                    <Check className="w-4 h-4 mx-auto text-green-500" />
-                  </td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-3 px-4">Watermark-free Downloads</td>
-                  <td className="text-center py-3 px-4">
-                    <X className="w-4 h-4 mx-auto text-red-500" />
-                  </td>
-                  <td className="text-center py-3 px-4">
-                    <X className="w-4 h-4 mx-auto text-red-500" />
-                  </td>
-                  <td className="text-center py-3 px-4 bg-pink-50">
-                    <Check className="w-4 h-4 mx-auto text-green-500" />
-                  </td>
-                  <td className="text-center py-3 px-4">
-                    <Check className="w-4 h-4 mx-auto text-green-500" />
-                  </td>
-                </tr>
-                <tr className="border-b">
-                  <td className="py-3 px-4">API Access</td>
-                  <td className="text-center py-3 px-4">
-                    <X className="w-4 h-4 mx-auto text-red-500" />
-                  </td>
-                  <td className="text-center py-3 px-4">
-                    <X className="w-4 h-4 mx-auto text-red-500" />
-                  </td>
-                  <td className="text-center py-3 px-4">
-                    <X className="w-4 h-4 mx-auto text-red-500" />
-                  </td>
-                  <td className="text-center py-3 px-4 bg-pink-50">
-                    <X className="w-4 h-4 mx-auto text-red-500" />
-                  </td>
-                  <td className="text-center py-3 px-4">
-                    <Check className="w-4 h-4 mx-auto text-green-500" />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </Card>
 
         {/* FAQ */}
         <Card className="p-6">
@@ -401,12 +321,6 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
                   Yes! Every new user gets 1 free outfit visualization to try our platform.
                 </p>
               </div>
-              <div>
-                <h4 className="font-medium mb-2">Do you offer refunds?</h4>
-                <p className="text-sm text-muted-foreground">
-                  We offer a 30-day money-back guarantee for all paid plans. No questions asked.
-                </p>
-              </div>
             </div>
           </div>
         </Card>
@@ -428,13 +342,10 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            Join 50,000+ fashion enthusiasts already using SwapMyLook
+            Join 10,000+ fashion enthusiasts already using SwapMyLook
           </p>
         </div>
       </div>
     </div>
   );
 }
-
-// Missing X import
-import { X } from 'lucide-react';
