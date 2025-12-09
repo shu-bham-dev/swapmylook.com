@@ -554,12 +554,14 @@ class ApiService {
     const url = `${API_BASE_URL}/uploads/direct`;
     
     try {
+      const headers: HeadersInit = {};
+      if (this.authToken) {
+        headers['Authorization'] = `Bearer ${this.authToken}`;
+      }
       const response = await fetch(url, {
         method: 'POST',
         body: formData,
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken') || 'demo-token'}`,
-        },
+        headers,
       });
       
       if (!response.ok) {
@@ -689,6 +691,18 @@ class ApiService {
     };
   }> {
     return this.request('/subscription/upgrade', {
+      method: 'POST',
+      body: JSON.stringify({ plan, billingCycle }),
+    });
+  }
+
+  /**
+   * Create a Dodo Payments checkout session for subscription upgrade
+   */
+  async createCheckoutSession(plan: string, billingCycle: 'monthly' | 'yearly' = 'monthly'): Promise<{
+    url: string;
+  }> {
+    return this.request('/payments/create-checkout-session', {
       method: 'POST',
       body: JSON.stringify({ plan, billingCycle }),
     });

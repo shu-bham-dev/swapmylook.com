@@ -69,12 +69,14 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
 
     try {
       setSelectedPlan(planId);
-      await apiService.upgradeSubscription(planId, billingCycle);
-      toast.success(`Successfully upgraded to ${planId} plan`);
-      await fetchSubscriptionData();
+      const { url } = await apiService.createCheckoutSession(planId, billingCycle);
+      // Redirect to Dodo Payments hosted checkout
+      window.location.href = url;
+      // Note: after successful payment, webhook will update subscription
+      // The user will be redirected back to return_url (configured in backend)
     } catch (error) {
-      console.error('Failed to upgrade subscription:', error);
-      toast.error('Failed to upgrade subscription');
+      console.error('Failed to create checkout session:', error);
+      toast.error('Failed to start checkout. Please try again.');
     }
   };
 
