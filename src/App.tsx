@@ -7,7 +7,6 @@ import { OutfitLibrary, type Outfit } from './components/OutfitLibrary';
 import { ControlsPanel } from './components/ControlsPanel';
 import { SEO, homePageSEO } from './components/SEO';
 import { Footer } from './components/Footer';
-import { Button } from './components/ui/button';
 import { Card } from './components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './components/ui/accordion';
 import { apiService } from './services/api';

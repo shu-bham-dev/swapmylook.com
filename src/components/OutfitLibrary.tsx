@@ -4,11 +4,12 @@ import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
-import { Search, Filter, Heart, Star, Upload, Plus, X, Sparkles, Download, RotateCcw, Trash2 } from 'lucide-react';
+import { Search, Heart, Star, Upload, Plus, X, Sparkles, Download, RotateCcw, Trash2 } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { apiService } from '../services/api';
+import { toast } from 'sonner';
 
 export interface Outfit {
   id: string;
@@ -116,6 +117,13 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
   const [generationStatus, setGenerationStatus] = useState<'queued' | 'processing' | 'succeeded' | 'failed' | null>(null);
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [generatedImageId, setGeneratedImageId] = useState<string | null>(null);
+
+  // Save and Delete dialogs
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [outfitName, setOutfitName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Check if user is authenticated
   const isAuthenticated = apiService.isAuthenticated();
@@ -273,6 +281,7 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
             if (status.status === 'succeeded' && status.outputImage) {
               setIsGenerating(false);
               setGeneratedImage(status.outputImage.url);
+              setGeneratedImageId(status.outputImage.id);
             } else if (status.status === 'failed') {
               console.error('Generation failed:', status.error);
               setIsGenerating(false);
@@ -302,6 +311,7 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
       setIsGenerating(false);
       setGenerationStatus('succeeded');
       setGeneratedImage(uploadedOutfit?.image || null);
+      setGeneratedImageId(null); // No real asset ID in simulation
     }, 2000);
   };
 
@@ -311,6 +321,10 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
   };
 
   const handleSave = () => {
+    setSaveDialogOpen(true);
+  };
+
+  const handleDownload = () => {
     if (generatedImage) {
       const link = document.createElement('a');
       link.href = generatedImage;
@@ -319,19 +333,55 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
       link.click();
       document.body.removeChild(link);
     } else {
-      alert('No generated image to save');
+      alert('No generated image to download');
     }
   };
 
-  const handleDownload = () => {
-    // Same as save for now
-    handleSave();
+  const handleDelete = () => {
+    setDeleteDialogOpen(true);
   };
 
-  const handleDelete = () => {
+  const handleSaveConfirm = async () => {
+    if (!generatedImage) {
+      alert('No generated image to save');
+      return;
+    }
+    if (!outfitName.trim()) {
+      alert('Please enter an outfit name');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      if (generatedImageId) {
+        // Update asset metadata with the new name
+        await apiService.updateAssetMetadata(generatedImageId, { originalName: outfitName });
+        toast.success('Outfit saved successfully!', {
+          description: `The outfit has been saved as "${outfitName}".`,
+        });
+      } else {
+        // No asset ID (simulation), still show success
+        toast.success('Outfit saved successfully!', {
+          description: `The outfit has been saved as "${outfitName}".`,
+        });
+      }
+      setSaveDialogOpen(false);
+      setOutfitName('');
+    } catch (error) {
+      console.error('Failed to save outfit:', error);
+      toast.error('Failed to save outfit', {
+        description: 'Please try again later.',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteConfirm = () => {
     setGeneratedImage(null);
     setGenerationStatus(null);
     setIsDialogOpen(false);
+    setDeleteDialogOpen(false);
   };
 
   return (
@@ -638,6 +688,54 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
                 Generation failed. Please try again.
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save Outfit Dialog */}
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Save Outfit</DialogTitle>
+            <DialogDescription>
+              Enter a name for your generated outfit to save it to your library.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              placeholder="Outfit name"
+              value={outfitName}
+              onChange={(e) => setOutfitName(e.target.value)}
+              className="w-full"
+            />
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setSaveDialogOpen(false)} disabled={isSaving}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveConfirm} disabled={isSaving}>
+                {isSaving ? 'Saving...' : 'Save'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Generated Outfit</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this generated outfit? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm}>
+              Delete
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

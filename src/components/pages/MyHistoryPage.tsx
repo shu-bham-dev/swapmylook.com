@@ -348,7 +348,6 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
             >
               <Grid className="w-4 h-4" />
             </Button>
-           
           </div>
         </div>
 
@@ -455,7 +454,7 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
                   <div className="p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-sm font-medium truncate">
-                        {outfit.metadata?.filename || `Image ${outfit.id.slice(-6)}`}
+                        {outfit.metadata?.originalName  || outfit.metadata?.filename || `Image ${outfit.id.slice(-6)}`}
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {formatFileSize(outfit.sizeBytes)}
@@ -505,7 +504,7 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
                       
                       <div className="flex items-center justify-between mb-2">
                         <div className="font-medium truncate">
-                          {outfit.metadata?.filename || `Image ${outfit.id.slice(-6)}`}
+                          {outfit.metadata?.originalName || outfit.metadata?.filename || `Image ${outfit.id.slice(-6)}`}
                         </div>
                       </div>
                       
