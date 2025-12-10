@@ -225,7 +225,10 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
       <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
+            <div className="relative">
+              <div className="w-12 h-12 border-4 border-pink-200 rounded-full animate-spin border-t-pink-500"></div>
+              <Sparkles className="absolute inset-0 m-auto w-6 h-6 text-pink-500" />
+            </div>
           </div>
         </div>
       </div>
@@ -372,7 +375,10 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
         <div className="relative">
           {loading && (
             <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
+              <div className="relative">
+                <div className="w-12 h-12 border-4 border-pink-200 rounded-full animate-spin border-t-pink-500"></div>
+                <Sparkles className="absolute inset-0 m-auto w-6 h-6 text-pink-500" />
+              </div>
             </div>
           )}
           {outfits.length === 0 ? (

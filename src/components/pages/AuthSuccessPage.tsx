@@ -88,7 +88,10 @@ export function AuthSuccessPage({ onLogin, onPageChange }: AuthSuccessPageProps)
 
         <Card className="p-6 text-center">
           <div className="space-y-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mx-auto"></div>
+            <div className="relative mx-auto w-12 h-12">
+              <div className="w-12 h-12 border-4 border-pink-200 rounded-full animate-spin border-t-pink-500"></div>
+              <Sparkles className="absolute inset-0 m-auto w-6 h-6 text-pink-500" />
+            </div>
             <p className="text-sm text-muted-foreground">
               You'll be redirected to the main application in a moment.
             </p>

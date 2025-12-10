@@ -25,7 +25,7 @@ const AuthSuccessPage = lazy(() => import('./components/pages/AuthSuccessPage').
 // Loading component for lazy loading
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center">
-    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
+    <div className="w-12 h-12 border-4 border-pink-200 rounded-full animate-spin border-t-pink-500"></div>
   </div>
 );
 
@@ -465,9 +465,8 @@ function AppContent() {
   if (isInitializing) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-white to-purple-50">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto"></div>
-          <p className="text-muted-foreground">Initializing...</p>
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-pink-200 rounded-full animate-spin border-t-pink-500 mx-auto"></div>
         </div>
       </div>
     );
