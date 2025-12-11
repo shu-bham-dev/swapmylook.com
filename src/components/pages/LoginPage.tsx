@@ -35,21 +35,50 @@ export function LoginPage({ onLogin, onPageChange }: LoginPageProps) {
   const [name, setName] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+
+  const validatePassword = (pass: string) => {
+    if (pass.length < 8) return 'Password must be at least 8 characters long';
+    if (!/[A-Z]/.test(pass)) return 'Password must contain at least one uppercase letter';
+    if (!/[a-z]/.test(pass)) return 'Password must contain at least one lowercase letter';
+    if (!/\d/.test(pass)) return 'Password must contain at least one number';
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pass)) return 'Password must contain at least one special character';
+    const common = ['password', '123456', 'qwerty', 'letmein', 'welcome'];
+    if (common.includes(pass.toLowerCase())) return 'Password is too common, please choose a stronger password';
+    return '';
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate password for signup
+    if (!isLogin) {
+      const error = validatePassword(password);
+      if (error) {
+        setPasswordError(error);
+        toast.dismiss();
+        toast.error('Password validation failed', {
+          description: error,
+        });
+        return;
+      }
+    }
+    
     setIsLoading(true);
+    toast.dismiss(); // Clear any previous toasts before API call
     
     try {
       if (isLogin) {
         // Login with email and password
         await apiService.login(email, password, rememberMe);
+        toast.dismiss();
         toast.success('Welcome back!', {
           description: 'You have successfully logged in.',
         });
       } else {
         // Sign up with email, password, and name
         await apiService.signup(email, password, name);
+        toast.dismiss();
         toast.success('Account created!', {
           description: 'Your account has been created successfully.',
         });
@@ -65,6 +94,7 @@ export function LoginPage({ onLogin, onPageChange }: LoginPageProps) {
   };
 
   const handleGoogleLogin = async () => {
+    toast.dismiss(); // Clear any previous toasts before API call
     setIsLoading(true);
     
     try {
@@ -169,9 +199,18 @@ export function LoginPage({ onLogin, onPageChange }: LoginPageProps) {
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setPasswordError('');
+                  }}
+                  onBlur={() => {
+                    if (!isLogin) {
+                      const error = validatePassword(password);
+                      setPasswordError(error);
+                    }
+                  }}
                   required
-                  className="pl-10 pr-10 border-pink-100 focus:border-pink-300"
+                  className={`pl-10 pr-10 ${passwordError ? 'border-red-500 focus:border-red-500' : 'border-pink-100 focus:border-pink-300'}`}
                 />
                 <Lock className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                 <Button
@@ -188,6 +227,9 @@ export function LoginPage({ onLogin, onPageChange }: LoginPageProps) {
                   )}
                 </Button>
               </div>
+              {passwordError && (
+                <p className="text-sm text-red-500 mt-1">{passwordError}</p>
+              )}
             </div>
 
             {isLogin && (
