@@ -52,6 +52,8 @@ export function ModelSelection({ onModelSelect, selectedModel }: ModelSelectionP
 
   // Check if the selected model is an uploaded one
   const isUploadedModelSelected = selectedModel && uploadedModel && selectedModel.id === uploadedModel.id;
+  // Check if a predefined model is selected (not uploaded)
+  const isPredefinedModelSelected = selectedModel && (!uploadedModel || selectedModel.id !== uploadedModel.id);
 
   // Fetch public models from API
   useEffect(() => {
@@ -180,6 +182,31 @@ export function ModelSelection({ onModelSelect, selectedModel }: ModelSelectionP
                   onClick={handleRemoveUploadedModel}
                 >
                   Remove
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+      ) : isPredefinedModelSelected ? (
+        <Card className="border-2 border-pink-300 transition-colors p-4 bg-gradient-to-br from-pink-50 to-purple-50">
+          <div className="space-y-3">
+            <div className="text-center">
+              <h3 className="font-medium text-gray-900 text-sm mb-2">Selected Model</h3>
+              <div className="aspect-[3/4] relative rounded-lg overflow-hidden mx-auto max-w-32">
+                <ImageWithFallback
+                  src={selectedModel.image}
+                  alt={selectedModel.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="flex space-x-2 mt-3 justify-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-pink-300 text-pink-600 hover:bg-pink-50 text-xs"
+                  onClick={() => onModelSelect(null)}
+                >
+                  Deselect
                 </Button>
               </div>
             </div>

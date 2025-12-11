@@ -109,6 +109,7 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
   const [customOutfits, setCustomOutfits] = useState<Outfit[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedOutfit, setUploadedOutfit] = useState<Outfit | null>(null);
+  const [previewOutfit, setPreviewOutfit] = useState<Outfit | null>(null);
   const [fetchedOutfits, setFetchedOutfits] = useState<Outfit[]>([]);
   const [loadingOutfits, setLoadingOutfits] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -120,6 +121,7 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [generatedImageId, setGeneratedImageId] = useState<string | null>(null);
+  const [generatingOutfit, setGeneratingOutfit] = useState<Outfit | null>(null);
 
   // Save and Delete dialogs
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -286,6 +288,10 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
     setUploadedOutfit(null);
   };
 
+  const handleOutfitClick = (outfit: Outfit) => {
+    setPreviewOutfit(outfit);
+  };
+
   const removeCustomOutfit = (outfitId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setCustomOutfits(prev => prev.filter(outfit => outfit.id !== outfitId));
@@ -297,24 +303,33 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
     });
   };
 
-  // Handle opening generation dialog
-  const handleGenerateClick = () => {
-    if (!uploadedOutfit) return;
+  // Handle opening generation dialog for uploaded or preview outfit
+  const handleGenerateClick = (outfit?: Outfit) => {
+    const targetOutfit = outfit || uploadedOutfit;
+    if (!targetOutfit) return;
+    if (!selectedModel) {
+      toast.error('Please select a model first', {
+        description: 'You need to choose a model before generating an outfit.',
+      });
+      return;
+    }
+    // Notify parent about outfit selection (for history)
+    onOutfitSelect(targetOutfit);
     setIsDialogOpen(true);
-    startGeneration();
+    startGeneration(targetOutfit);
   };
 
-  // Start generation job
-  const startGeneration = async () => {
-    if (!uploadedOutfit) return;
+  // Start generation job for a specific outfit
+  const startGeneration = async (outfit: Outfit) => {
     setIsGenerating(true);
     setGenerationStatus('queued');
     setGeneratedImage(null);
+    setGeneratingOutfit(outfit);
 
     // If we have a model and outfit, call real API
-    if (selectedModel && uploadedOutfit) {
+    if (selectedModel && outfit) {
       try {
-        const job = await apiService.createGenerationJob(selectedModel.id, uploadedOutfit.id);
+        const job = await apiService.createGenerationJob(selectedModel.id, outfit.id);
         setCurrentJobId(job.jobId);
         setGenerationStatus(job.status);
 
@@ -343,26 +358,30 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
       } catch (error) {
         console.error('Error creating generation job:', error);
         // Fallback to simulation
-        simulateGeneration();
+        simulateGeneration(outfit);
       }
     } else {
       // No model selected, simulate generation
-      simulateGeneration();
+      simulateGeneration(outfit);
     }
   };
 
-  const simulateGeneration = () => {
+  const simulateGeneration = (outfit?: Outfit) => {
     setTimeout(() => {
       setIsGenerating(false);
       setGenerationStatus('succeeded');
-      setGeneratedImage(uploadedOutfit?.image || null);
+      setGeneratedImage(outfit?.image || uploadedOutfit?.image || null);
       setGeneratedImageId(null); // No real asset ID in simulation
     }, 2000);
   };
 
   const handleRegenerate = () => {
     setGeneratedImage(null);
-    startGeneration();
+    if (generatingOutfit) {
+      startGeneration(generatingOutfit);
+    } else if (uploadedOutfit) {
+      startGeneration(uploadedOutfit);
+    }
   };
 
   const handleSave = () => {
@@ -456,6 +475,7 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
                       isUploadedOutfitSelected ? 'bg-green-600 hover:bg-green-700' : ''
                     }`}
                     onClick={handleGenerateClick}
+                    disabled={!selectedModel}
                   >
                     {isUploadedOutfitSelected ? 'Selected ✓' : 'Generate'}
                   </Button>
@@ -464,6 +484,39 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
                     size="sm"
                     className="border-gray-300 text-gray-600 hover:bg-gray-50"
                     onClick={handleRemoveUploadedOutfit}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        ) : previewOutfit ? (
+          <Card className="border-2 border-pink-300 transition-colors p-4 bg-gradient-to-br from-pink-50 to-purple-50">
+            <div className="space-y-3">
+              <div className="text-center">
+                <h3 className="font-medium text-gray-900 mb-2">Selected Outfit</h3>
+                <div className="aspect-[3/4] relative rounded-lg overflow-hidden mx-auto max-w-32">
+                  <ImageWithFallback
+                    src={previewOutfit.image}
+                    alt={previewOutfit.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex space-x-2 mt-3 justify-center">
+                  <Button
+                    size="sm"
+                    className="bg-pink-500 hover:bg-pink-600 text-white"
+                    onClick={() => handleGenerateClick(previewOutfit)}
+                    disabled={!selectedModel}
+                  >
+                    Generate
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                    onClick={() => setPreviewOutfit(null)}
                   >
                     Remove
                   </Button>
@@ -558,9 +611,9 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
                       ? 'ring-2 ring-pink-400 shadow-lg'
                       : 'hover:shadow-md'
                   }`}
-                  onClick={() => onOutfitSelect(outfit)}
+                  onClick={() => handleOutfitClick(outfit)}
                 >
-                  <div className="aspect-[3/4] relative">
+                  <div className="h-48 w-full relative">
                     <ImageWithFallback
                       src={outfit.image}
                       alt={outfit.name}
@@ -603,36 +656,11 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
                         </button>
                       )}
                     </div>
-
-                    {/* Info Overlay */}
-                    <div className="absolute bottom-0 left-0 right-0 p-3 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-medium text-white text-sm">{outfit.name}</h3>
-                          <div className="flex items-center space-x-1">
-                            <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                            <span className="text-white text-xs">{outfit.rating}</span>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {outfit.tags.slice(0, 2).map((tag) => (
-                            <Badge
-                              key={tag}
-                              variant="secondary"
-                              className="text-xs bg-white/20 text-white border-white/30"
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
                   </div>
                   
                   {/* Basic Info Always Visible */}
                   <div className="p-2">
                     <h3 className="font-medium text-sm truncate">{outfit.name}</h3>
-                    <p className="text-xs text-muted-foreground">{outfit.style}</p>
                   </div>
                 </Card>
               ))}

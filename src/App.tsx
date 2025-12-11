@@ -105,82 +105,17 @@ function AppContent() {
     return 3;
   };
 
-  // Handle outfit selection with actual API call
-  const handleOutfitSelect = async (outfit: Outfit) => {
+  // Handle outfit selection - just update state, generation will be handled by OutfitLibrary dialog
+  const handleOutfitSelect = (outfit: Outfit) => {
     if (!selectedModel) return;
     
-    setIsLoading(true);
-    setJobStatus('queued');
+    // Add to history
+    const newHistoryEntry = { model: selectedModel, outfit };
+    setHistory(prev => [...prev.slice(0, historyIndex + 1), newHistoryEntry]);
+    setHistoryIndex(prev => prev + 1);
     
-    // Scroll to preview canvas after a short delay (no-op since preview canvas removed)
-    const scrollToPreview = () => {
-      // Do nothing
-    };
-    
-    try {
-      // Add to history
-      const newHistoryEntry = { model: selectedModel, outfit };
-      setHistory(prev => [...prev.slice(0, historyIndex + 1), newHistoryEntry]);
-      setHistoryIndex(prev => prev + 1);
-      
-      // Update selected outfit immediately to show placeholder
-      setSelectedOutfit(outfit);
-      scrollToPreview();
-      
-      // Create generation job with default prompt
-      const job = await apiService.createGenerationJob(
-        selectedModel.id,
-        outfit.id
-      );
-      
-      setCurrentJobId(job.jobId);
-      setJobStatus(job.status);
-      
-      // Poll for job status
-      const pollJobStatus = async () => {
-        try {
-          const status = await apiService.getJobStatus(job.jobId);
-          setJobStatus(status.status);
-          
-          if (status.status === 'succeeded' && status.outputImage) {
-            // Update the outfit with the generated image
-            const updatedOutfit = {
-              ...outfit,
-              image: status.outputImage.url
-            };
-            setSelectedOutfit(updatedOutfit);
-            setIsLoading(false);
-            console.log('✅ AI Generated image updated:', status.outputImage.url);
-            scrollToPreview();
-          } else if (status.status === 'failed') {
-            console.error('Generation failed:', status.error);
-            setSelectedOutfit(outfit);
-            setIsLoading(false);
-            scrollToPreview();
-          } else if (status.status === 'processing' || status.status === 'queued') {
-            // Continue polling
-            setTimeout(pollJobStatus, 2000);
-          }
-        } catch (error) {
-          console.error('Error polling job status:', error);
-          setSelectedOutfit(outfit);
-          setIsLoading(false);
-          scrollToPreview();
-        }
-      };
-      
-      // Start polling
-      setTimeout(pollJobStatus, 2000);
-      
-    } catch (error) {
-      console.error('Error creating generation job:', error);
-      // Fallback to simulation if API fails
-      setTimeout(() => {
-        setSelectedOutfit(outfit);
-        setIsLoading(false);
-        scrollToPreview();
-      }, 1500);
-    }
+    // Update selected outfit
+    setSelectedOutfit(outfit);
   };
 
   // History management
