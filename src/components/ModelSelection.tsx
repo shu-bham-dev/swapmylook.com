@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Upload, User } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { apiService } from '../services/api';
@@ -44,7 +45,10 @@ export function ModelSelection({ onModelSelect, selectedModel }: ModelSelectionP
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedModel, setUploadedModel] = useState<Model | null>(null);
   const [fetchedModels, setFetchedModels] = useState<Model[]>([]);
+  const [userModels, setUserModels] = useState<Model[]>([]);
   const [loadingModels, setLoadingModels] = useState(true);
+  const [loadingUserModels, setLoadingUserModels] = useState(false);
+  const [activeTab, setActiveTab] = useState<'global' | 'you'>('global');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check if user is authenticated
@@ -77,8 +81,35 @@ export function ModelSelection({ onModelSelect, selectedModel }: ModelSelectionP
     fetchModels();
   }, []);
 
-  // Determine which models to display
-  const displayModels = fetchedModels.length > 0 ? fetchedModels : predefinedModels;
+  // Fetch user's models when "You" tab is active and authenticated
+  useEffect(() => {
+    if (activeTab === 'you' && isAuthenticated) {
+      const fetchUserModels = async () => {
+        setLoadingUserModels(true);
+        try {
+          const response = await apiService.getOutfits({ type: 'model' });
+          const models: Model[] = response.outfits.map((outfit: any) => ({
+            id: outfit.id,
+            name: outfit.metadata?.originalName || outfit.metadata?.filename || 'Your Model',
+            image: outfit.url,
+            category: 'diverse'
+          }));
+          setUserModels(models);
+        } catch (error) {
+          console.error('Failed to fetch user models:', error);
+        } finally {
+          setLoadingUserModels(false);
+        }
+      };
+      fetchUserModels();
+    }
+  }, [activeTab, isAuthenticated]);
+
+  // Determine which models to display based on active tab
+  const modelsToShow = activeTab === 'global'
+    ? (fetchedModels.length > 0 ? fetchedModels : predefinedModels)
+    : userModels;
+  const isLoading = activeTab === 'global' ? loadingModels : loadingUserModels;
 
   const handleButtonClick = () => {
     if (!isAuthenticated) {
@@ -252,44 +283,103 @@ export function ModelSelection({ onModelSelect, selectedModel }: ModelSelectionP
         </Card>
       )}
 
-      {/* Predefined Models */}
-      <div className="space-y-4">
-        <h3 className="font-medium text-gray-900">Or select a model:</h3>
-        {loadingModels ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin w-6 h-6 border-2 border-pink-500 border-t-transparent rounded-full" />
-          </div>
-        ) : (
-          <div className="flex space-x-4 overflow-x-auto pb-4 -mx-2 px-2">
-            {displayModels.map((model) => (
-              <Card
-                key={model.id}
-                className={`cursor-pointer transition-all duration-300 hover:scale-105 overflow-hidden flex-shrink-0 w-32 ${
-                  selectedModel?.id === model.id
-                    ? 'ring-2 ring-pink-400 shadow-lg'
-                    : 'hover:shadow-md'
-                }`}
-                onClick={() => onModelSelect(model)}
-              >
-                <div className="aspect-[3/4] relative">
-                  <ImageWithFallback
-                    src={model.image}
-                    alt={model.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                  <div className="absolute bottom-2 left-2 right-2">
-                    <div className="flex items-center space-x-2">
-                      <User className="w-3 h-3 text-white" />
-                      <span className="text-white font-medium text-xs">{model.name}</span>
+      {/* Tabs for Global vs You */}
+      <Tabs value={activeTab} onValueChange={(v: string) => setActiveTab(v as 'global' | 'you')} className="space-y-4">
+        <TabsList className="bg-pink-50">
+          <TabsTrigger value="global" className="data-[state=active]:bg-pink-200">
+            Global
+          </TabsTrigger>
+          <TabsTrigger value="you" className="data-[state=active]:bg-pink-200" disabled={!isAuthenticated}>
+            You
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="global" className="space-y-4">
+          <h3 className="font-medium text-gray-900">Select a model from global collection:</h3>
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin w-6 h-6 border-2 border-pink-500 border-t-transparent rounded-full" />
+            </div>
+          ) : (
+            <div className="flex space-x-4 overflow-x-auto pb-4 -mx-2 px-2">
+              {modelsToShow.map((model) => (
+                <Card
+                  key={model.id}
+                  className={`cursor-pointer transition-all duration-300 hover:scale-105 overflow-hidden flex-shrink-0 w-32 ${
+                    selectedModel?.id === model.id
+                      ? 'ring-2 ring-pink-400 shadow-lg'
+                      : 'hover:shadow-md'
+                  }`}
+                  onClick={() => onModelSelect(model)}
+                >
+                  <div className="aspect-[3/4] relative">
+                    <ImageWithFallback
+                      src={model.image}
+                      alt={model.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    <div className="absolute bottom-2 left-2 right-2">
+                      <div className="flex items-center space-x-2">
+                        <User className="w-3 h-3 text-white" />
+                        <span className="text-white font-medium text-xs">{model.name}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+        <TabsContent value="you" className="space-y-4">
+          <h3 className="font-medium text-gray-900">Your uploaded models:</h3>
+          {!isAuthenticated ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-4">Please log in to see your uploaded models.</p>
+              <Button onClick={() => navigate('/login')} className="bg-pink-500 hover:bg-pink-600">
+                Log In
+              </Button>
+            </div>
+          ) : isLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin w-6 h-6 border-2 border-pink-500 border-t-transparent rounded-full" />
+            </div>
+          ) : modelsToShow.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">You haven't uploaded any models yet.</p>
+              <p className="text-sm text-muted-foreground mt-2">Upload a model using the upload card above.</p>
+            </div>
+          ) : (
+            <div className="flex space-x-4 overflow-x-auto pb-4 -mx-2 px-2">
+              {modelsToShow.map((model) => (
+                <Card
+                  key={model.id}
+                  className={`cursor-pointer transition-all duration-300 hover:scale-105 overflow-hidden flex-shrink-0 w-32 ${
+                    selectedModel?.id === model.id
+                      ? 'ring-2 ring-pink-400 shadow-lg'
+                      : 'hover:shadow-md'
+                  }`}
+                  onClick={() => onModelSelect(model)}
+                >
+                  <div className="aspect-[3/4] relative">
+                    <ImageWithFallback
+                      src={model.image}
+                      alt={model.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                    <div className="absolute bottom-2 left-2 right-2">
+                      <div className="flex items-center space-x-2">
+                        <User className="w-3 h-3 text-white" />
+                        <span className="text-white font-medium text-xs">{model.name}</span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

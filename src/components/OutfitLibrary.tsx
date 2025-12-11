@@ -135,6 +135,11 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
   // Check if the selected outfit is an uploaded one
   const isUploadedOutfitSelected = selectedOutfit && uploadedOutfit && selectedOutfit.id === uploadedOutfit.id;
 
+  // State for tabs
+  const [activeOutfitTab, setActiveOutfitTab] = useState<'global' | 'you'>('global');
+  const [userOutfits, setUserOutfits] = useState<Outfit[]>([]);
+  const [loadingUserOutfits, setLoadingUserOutfits] = useState(false);
+
   // Fetch public outfits from API
   useEffect(() => {
     const fetchOutfits = async () => {
@@ -163,6 +168,37 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
     fetchOutfits();
   }, []);
 
+  // Fetch user's outfits when "You" tab is active and authenticated
+  useEffect(() => {
+    if (activeOutfitTab === 'you' && isAuthenticated) {
+      const fetchUserOutfits = async () => {
+        setLoadingUserOutfits(true);
+        try {
+          const response = await apiService.getOutfits({ type: 'outfit' });
+          const outfitsFromApi: Outfit[] = response.outfits.map((outfit: any) => ({
+            id: outfit.id,
+            name: outfit.metadata?.originalName || outfit.metadata?.filename || 'Your Outfit',
+            image: outfit.url,
+            category: mapTagsToCategory(outfit.tags || []),
+            tags: outfit.tags || [],
+            style: outfit.metadata?.style || 'Custom',
+            season: outfit.metadata?.season || 'All Season',
+            color: outfit.metadata?.color || 'Various',
+            rating: 5.0,
+            liked: false,
+            isCustom: true
+          }));
+          setUserOutfits(outfitsFromApi);
+        } catch (error) {
+          console.error('Failed to fetch user outfits:', error);
+        } finally {
+          setLoadingUserOutfits(false);
+        }
+      };
+      fetchUserOutfits();
+    }
+  }, [activeOutfitTab, isAuthenticated]);
+
   // Helper to map tags to category
   const mapTagsToCategory = (tags: string[]): Outfit['category'] => {
     const lowerTags = tags.map(t => t.toLowerCase());
@@ -175,10 +211,13 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
     return 'casual';
   };
 
-  // Determine which outfits to display
-  const displayOutfits = fetchedOutfits.length > 0 ? fetchedOutfits : outfits;
+  // Determine which outfits to display based on active tab
+  const outfitsToDisplay = activeOutfitTab === 'global'
+    ? (fetchedOutfits.length > 0 ? fetchedOutfits : outfits)
+    : [...userOutfits, ...customOutfits];
 
-  const allOutfits = [...displayOutfits, ...customOutfits];
+  const allOutfits = outfitsToDisplay;
+  const isLoading = activeOutfitTab === 'global' ? loadingOutfits : loadingUserOutfits;
 
   const categories = [
     { id: 'all', name: 'All', count: allOutfits.length },
@@ -328,8 +367,10 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
 
     // If we have a model and outfit, call real API
     if (selectedModel && outfit) {
+      console.log('Starting generation with:', { selectedModelId: selectedModel.id, outfitId: outfit.id, outfit });
       try {
         const job = await apiService.createGenerationJob(selectedModel.id, outfit.id);
+        console.log('Job created:', job);
         setCurrentJobId(job.jobId);
         setGenerationStatus(job.status);
 
@@ -474,7 +515,7 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
                     className={`bg-pink-500 hover:bg-pink-600 text-white ${
                       isUploadedOutfitSelected ? 'bg-green-600 hover:bg-green-700' : ''
                     }`}
-                    onClick={handleGenerateClick}
+                    onClick={() => handleGenerateClick()}
                     disabled={!selectedModel}
                   >
                     {isUploadedOutfitSelected ? 'Selected ✓' : 'Generate'}
@@ -574,6 +615,18 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
           />
         </div>
 
+        {/* Global vs You Tabs */}
+        <Tabs value={activeOutfitTab} onValueChange={(v: string) => setActiveOutfitTab(v as 'global' | 'you')}>
+          <TabsList className="bg-pink-50">
+            <TabsTrigger value="global" className="data-[state=active]:bg-pink-200">
+              Global
+            </TabsTrigger>
+            <TabsTrigger value="you" className="data-[state=active]:bg-pink-200" disabled={!isAuthenticated}>
+              You
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
         {/* Categories */}
         <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
           <TabsList className="grid w-full grid-cols-5 bg-pink-50 text-pink-600">
@@ -595,10 +648,28 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
 
       {/* Outfit Grid - Scrollable */}
       <div className="flex-1 overflow-y-auto">
-        {loadingOutfits ? (
+        {activeOutfitTab === 'you' && !isAuthenticated ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <p className="text-muted-foreground mb-4">Please log in to see your uploaded outfits.</p>
+            <Button onClick={() => navigate('/login')} className="bg-pink-500 hover:bg-pink-600">
+              Log In
+            </Button>
+          </div>
+        ) : isLoading ? (
           <div className="flex justify-center items-center py-12">
             <div className="animate-spin w-8 h-8 border-4 border-pink-500 border-t-transparent rounded-full" />
             <span className="ml-3 text-pink-600">Loading outfits...</span>
+          </div>
+        ) : filteredOutfits.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            {activeOutfitTab === 'global' ? (
+              <p>No outfits found matching your search.</p>
+            ) : (
+              <>
+                <p>You haven't uploaded any outfits yet.</p>
+                <p className="text-sm mt-2">Upload an outfit using the upload card above.</p>
+              </>
+            )}
           </div>
         ) : (
           <>
@@ -665,12 +736,6 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
                 </Card>
               ))}
             </div>
-
-            {filteredOutfits.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>No outfits found matching your search.</p>
-              </div>
-            )}
           </>
         )}
       </div>
@@ -716,7 +781,7 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
                 <ImageWithFallback
                   src={generatedImage}
                   alt="AI Generated Outfit"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
               </div>
             )}
