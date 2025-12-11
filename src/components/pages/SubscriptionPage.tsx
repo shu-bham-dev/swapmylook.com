@@ -278,7 +278,7 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
                             : 'bg-purple-500 hover:bg-purple-600'
                         } text-white`}
                       >
-                        {plan.id === 'free' ? 'Current Plan' : `Upgrade to ${plan.name}`}
+                        {plan.id === 'free' ? 'Free Plan' : `Upgrade to ${plan.name}`}
                       </Button>
                     )}
                   </div>

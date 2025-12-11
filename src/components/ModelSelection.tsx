@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
@@ -43,6 +43,8 @@ export function ModelSelection({ onModelSelect, selectedModel }: ModelSelectionP
   const navigate = useNavigate();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedModel, setUploadedModel] = useState<Model | null>(null);
+  const [fetchedModels, setFetchedModels] = useState<Model[]>([]);
+  const [loadingModels, setLoadingModels] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check if user is authenticated
@@ -50,6 +52,31 @@ export function ModelSelection({ onModelSelect, selectedModel }: ModelSelectionP
 
   // Check if the selected model is an uploaded one
   const isUploadedModelSelected = selectedModel && uploadedModel && selectedModel.id === uploadedModel.id;
+
+  // Fetch public models from API
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        const response = await apiService.getPublicImages({ type: 'model' });
+        const models: Model[] = response.images.map(img => ({
+          id: img.id,
+          name: img.name || 'Model',
+          image: img.url,
+          category: 'diverse' // default category, could be derived from tags if needed
+        }));
+        setFetchedModels(models);
+      } catch (error) {
+        console.error('Failed to fetch public models:', error);
+        // Keep empty, fallback to predefinedModels
+      } finally {
+        setLoadingModels(false);
+      }
+    };
+    fetchModels();
+  }, []);
+
+  // Determine which models to display
+  const displayModels = fetchedModels.length > 0 ? fetchedModels : predefinedModels;
 
   const handleButtonClick = () => {
     if (!isAuthenticated) {
@@ -201,34 +228,40 @@ export function ModelSelection({ onModelSelect, selectedModel }: ModelSelectionP
       {/* Predefined Models */}
       <div className="space-y-4">
         <h3 className="font-medium text-gray-900">Or select a model:</h3>
-        <div className="flex space-x-4 overflow-x-auto pb-4 -mx-2 px-2">
-          {predefinedModels.map((model) => (
-            <Card
-              key={model.id}
-              className={`cursor-pointer transition-all duration-300 hover:scale-105 overflow-hidden flex-shrink-0 w-32 ${
-                selectedModel?.id === model.id
-                  ? 'ring-2 ring-pink-400 shadow-lg'
-                  : 'hover:shadow-md'
-              }`}
-              onClick={() => onModelSelect(model)}
-            >
-              <div className="aspect-[3/4] relative">
-                <ImageWithFallback
-                  src={model.image}
-                  alt={model.name}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                <div className="absolute bottom-2 left-2 right-2">
-                  <div className="flex items-center space-x-2">
-                    <User className="w-3 h-3 text-white" />
-                    <span className="text-white font-medium text-xs">{model.name}</span>
+        {loadingModels ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin w-6 h-6 border-2 border-pink-500 border-t-transparent rounded-full" />
+          </div>
+        ) : (
+          <div className="flex space-x-4 overflow-x-auto pb-4 -mx-2 px-2">
+            {displayModels.map((model) => (
+              <Card
+                key={model.id}
+                className={`cursor-pointer transition-all duration-300 hover:scale-105 overflow-hidden flex-shrink-0 w-32 ${
+                  selectedModel?.id === model.id
+                    ? 'ring-2 ring-pink-400 shadow-lg'
+                    : 'hover:shadow-md'
+                }`}
+                onClick={() => onModelSelect(model)}
+              >
+                <div className="aspect-[3/4] relative">
+                  <ImageWithFallback
+                    src={model.image}
+                    alt={model.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  <div className="absolute bottom-2 left-2 right-2">
+                    <div className="flex items-center space-x-2">
+                      <User className="w-3 h-3 text-white" />
+                      <span className="text-white font-medium text-xs">{model.name}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

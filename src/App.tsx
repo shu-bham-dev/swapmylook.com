@@ -21,6 +21,7 @@ const ContactPage = lazy(() => import('./components/pages/ContactPage').then(mod
 const AboutPage = lazy(() => import('./components/pages/AboutPage').then(module => ({ default: module.AboutPage })));
 const TermsPage = lazy(() => import('./components/pages/TermsPage').then(module => ({ default: module.TermsPage })));
 const AuthSuccessPage = lazy(() => import('./components/pages/AuthSuccessPage').then(module => ({ default: module.AuthSuccessPage })));
+const AdminActionPage = lazy(() => import('./components/pages/AdminActionPage').then(module => ({ default: module.default })));
 
 // Loading component for lazy loading
 const LoadingFallback = () => (
@@ -482,6 +483,7 @@ function AppContent() {
       {currentPage === 'history' && <SEO title="My History - Swap My Look" description="View and manage your uploaded models, outfits, and AI-generated images." url="https://swapmylook.com/history" />}
       {currentPage === 'subscription' && <SEO title="Subscription Plans - Swap My Look" description="Choose the perfect subscription plan for unlimited AI outfit changes and premium features." url="https://swapmylook.com/subscription" />}
       {currentPage === 'terms' && <SEO title="Terms of Service - Swap My Look" description="Read our terms of service and privacy policy for using the Swap My Look AI fashion platform." url="https://swapmylook.com/terms" />}
+      {currentPage === 'admin-action' && <SEO title="Admin Upload - Swap My Look" description="Upload images for models and outfits to be displayed on the homepage." url="https://swapmylook.com/admin-action" />}
       
       {/* Navigation - show on all pages except login */}
       {currentPage !== 'login' && (
@@ -535,6 +537,11 @@ function AppContent() {
         <Route path="/auth/success" element={
           <Suspense fallback={<LoadingFallback />}>
             <AuthSuccessPage onLogin={handleLogin} onPageChange={handlePageChange} />
+          </Suspense>
+        } />
+        <Route path="/admin-action" element={
+          <Suspense fallback={<LoadingFallback />}>
+            <AdminActionPage />
           </Suspense>
         } />
         <Route path="*" element={<Navigate to="/" replace />} />

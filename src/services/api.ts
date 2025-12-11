@@ -1,6 +1,6 @@
 // API service for communicating with the backend
-const API_BASE_URL = 'https://swapmylookcom-be-production.up.railway.app/api/v1';
-// const API_BASE_URL = 'http://localhost:3001/api/v1';
+// const API_BASE_URL = 'https://swapmylookcom-be-production.up.railway.app/api/v1';
+const API_BASE_URL = 'http://localhost:3001/api/v1';
 import { toast } from 'sonner';
 
 interface ApiResponse<T> {
@@ -549,7 +549,15 @@ class ApiService {
   /**
    * Upload a file directly
    */
-  async uploadFile(file: File, purpose: 'model' | 'outfit' | 'other'): Promise<{
+  async uploadFile(
+    file: File,
+    purpose: 'model' | 'outfit' | 'other',
+    options?: {
+      name?: string;
+      tags?: string[];
+      isPublic?: boolean;
+    }
+  ): Promise<{
     imageAsset: {
       id: string;
       url: string;
@@ -563,6 +571,15 @@ class ApiService {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('purpose', purpose);
+    if (options?.name) {
+      formData.append('name', options.name);
+    }
+    if (options?.tags && options.tags.length > 0) {
+      formData.append('tags', options.tags.join(','));
+    }
+    if (options?.isPublic !== undefined) {
+      formData.append('isPublic', options.isPublic.toString());
+    }
 
     const url = `${API_BASE_URL}/uploads/direct`;
     
@@ -599,6 +616,49 @@ class ApiService {
     allowedPurposes: string[];
   }> {
     return this.request('/uploads/limits');
+  }
+
+  /**
+   * Get public images (models and outfits) with filtering
+   */
+  async getPublicImages(params?: {
+    type?: 'model' | 'outfit';
+    name?: string;
+    tags?: string;
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: string;
+  }): Promise<{
+    images: Array<{
+      id: string;
+      name: string;
+      type: 'model' | 'outfit';
+      url: string;
+      width?: number;
+      height?: number;
+      tags: string[];
+      metadata: any;
+    }>;
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      pages: number;
+    };
+    filters: any;
+  }> {
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryParams.append(key, value.toString());
+        }
+      });
+    }
+    
+    const endpoint = queryParams.toString() ? `/public/images?${queryParams}` : '/public/images';
+    return this.request(endpoint);
   }
 
   /**

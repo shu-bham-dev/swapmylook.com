@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
@@ -109,6 +109,8 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
   const [customOutfits, setCustomOutfits] = useState<Outfit[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedOutfit, setUploadedOutfit] = useState<Outfit | null>(null);
+  const [fetchedOutfits, setFetchedOutfits] = useState<Outfit[]>([]);
+  const [loadingOutfits, setLoadingOutfits] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Dialog and generation state
@@ -131,7 +133,50 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
   // Check if the selected outfit is an uploaded one
   const isUploadedOutfitSelected = selectedOutfit && uploadedOutfit && selectedOutfit.id === uploadedOutfit.id;
 
-  const allOutfits = [...outfits, ...customOutfits];
+  // Fetch public outfits from API
+  useEffect(() => {
+    const fetchOutfits = async () => {
+      try {
+        const response = await apiService.getPublicImages({ type: 'outfit' });
+        const outfitsFromApi: Outfit[] = response.images.map(img => ({
+          id: img.id,
+          name: img.name || 'Outfit',
+          image: img.url,
+          category: mapTagsToCategory(img.tags),
+          tags: img.tags || [],
+          style: img.metadata?.style || 'Casual',
+          season: img.metadata?.season || 'All Season',
+          color: img.metadata?.color || 'Various',
+          rating: 4.5,
+          liked: false
+        }));
+        setFetchedOutfits(outfitsFromApi);
+      } catch (error) {
+        console.error('Failed to fetch public outfits:', error);
+        // Keep empty, fallback to hardcoded outfits
+      } finally {
+        setLoadingOutfits(false);
+      }
+    };
+    fetchOutfits();
+  }, []);
+
+  // Helper to map tags to category
+  const mapTagsToCategory = (tags: string[]): Outfit['category'] => {
+    const lowerTags = tags.map(t => t.toLowerCase());
+    if (lowerTags.includes('casual')) return 'casual';
+    if (lowerTags.includes('formal')) return 'formal';
+    if (lowerTags.includes('business')) return 'business';
+    if (lowerTags.includes('party')) return 'party';
+    if (lowerTags.includes('summer')) return 'summer';
+    if (lowerTags.includes('winter')) return 'winter';
+    return 'casual';
+  };
+
+  // Determine which outfits to display
+  const displayOutfits = fetchedOutfits.length > 0 ? fetchedOutfits : outfits;
+
+  const allOutfits = [...displayOutfits, ...customOutfits];
 
   const categories = [
     { id: 'all', name: 'All', count: allOutfits.length },
@@ -497,99 +542,108 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
 
       {/* Outfit Grid - Scrollable */}
       <div className="flex-1 overflow-y-auto">
-        <div className="grid grid-cols-2 gap-2 pb-4">
-          {filteredOutfits.map((outfit) => (
-            <Card
-              key={outfit.id}
-              className={`cursor-pointer transition-all duration-300 hover:scale-[1.02] overflow-hidden group relative ${
-                selectedOutfit?.id === outfit.id
-                  ? 'ring-2 ring-pink-400 shadow-lg'
-                  : 'hover:shadow-md'
-              }`}
-              onClick={() => onOutfitSelect(outfit)}
-            >
-              <div className="aspect-[3/4] relative">
-                <ImageWithFallback
-                  src={outfit.image}
-                  alt={outfit.name}
-                  className="w-full h-full object-cover"
-                />
-                
-                {/* Custom outfit indicator */}
-                {outfit.isCustom && (
-                  <div className="absolute top-2 left-2">
-                    <Badge className="bg-pink-500 text-white text-xs">
-                      Custom
-                    </Badge>
-                  </div>
-                )}
-                
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                
-                {/* Action buttons */}
-                <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <button
-                    onClick={(e) => toggleLike(outfit.id, e)}
-                    className="p-1.5 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-colors"
-                  >
-                    <Heart
-                      className={`w-4 h-4 transition-colors ${
-                        likedOutfits.has(outfit.id)
-                          ? 'text-red-500 fill-red-500'
-                          : 'text-gray-600'
-                      }`}
+        {loadingOutfits ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin w-8 h-8 border-4 border-pink-500 border-t-transparent rounded-full" />
+            <span className="ml-3 text-pink-600">Loading outfits...</span>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-2 pb-4">
+              {filteredOutfits.map((outfit) => (
+                <Card
+                  key={outfit.id}
+                  className={`cursor-pointer transition-all duration-300 hover:scale-[1.02] overflow-hidden group relative ${
+                    selectedOutfit?.id === outfit.id
+                      ? 'ring-2 ring-pink-400 shadow-lg'
+                      : 'hover:shadow-md'
+                  }`}
+                  onClick={() => onOutfitSelect(outfit)}
+                >
+                  <div className="aspect-[3/4] relative">
+                    <ImageWithFallback
+                      src={outfit.image}
+                      alt={outfit.name}
+                      className="w-full h-full object-cover"
                     />
-                  </button>
-                  
-                  {outfit.isCustom && (
-                    <button
-                      onClick={(e) => removeCustomOutfit(outfit.id, e)}
-                      className="p-1.5 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-colors"
-                    >
-                      <X className="w-4 h-4 text-red-600" />
-                    </button>
-                  )}
-                </div>
+                    
+                    {/* Custom outfit indicator */}
+                    {outfit.isCustom && (
+                      <div className="absolute top-2 left-2">
+                        <Badge className="bg-pink-500 text-white text-xs">
+                          Custom
+                        </Badge>
+                      </div>
+                    )}
+                    
+                    {/* Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    
+                    {/* Action buttons */}
+                    <div className="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <button
+                        onClick={(e) => toggleLike(outfit.id, e)}
+                        className="p-1.5 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-colors"
+                      >
+                        <Heart
+                          className={`w-4 h-4 transition-colors ${
+                            likedOutfits.has(outfit.id)
+                              ? 'text-red-500 fill-red-500'
+                              : 'text-gray-600'
+                          }`}
+                        />
+                      </button>
+                      
+                      {outfit.isCustom && (
+                        <button
+                          onClick={(e) => removeCustomOutfit(outfit.id, e)}
+                          className="p-1.5 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-colors"
+                        >
+                          <X className="w-4 h-4 text-red-600" />
+                        </button>
+                      )}
+                    </div>
 
-                {/* Info Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-3 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium text-white text-sm">{outfit.name}</h3>
-                      <div className="flex items-center space-x-1">
-                        <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                        <span className="text-white text-xs">{outfit.rating}</span>
+                    {/* Info Overlay */}
+                    <div className="absolute bottom-0 left-0 right-0 p-3 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-medium text-white text-sm">{outfit.name}</h3>
+                          <div className="flex items-center space-x-1">
+                            <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                            <span className="text-white text-xs">{outfit.rating}</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {outfit.tags.slice(0, 2).map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="secondary"
+                              className="text-xs bg-white/20 text-white border-white/30"
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-1">
-                      {outfit.tags.slice(0, 2).map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="secondary"
-                          className="text-xs bg-white/20 text-white border-white/30"
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
                   </div>
-                </div>
-              </div>
-              
-              {/* Basic Info Always Visible */}
-              <div className="p-2">
-                <h3 className="font-medium text-sm truncate">{outfit.name}</h3>
-                <p className="text-xs text-muted-foreground">{outfit.style}</p>
-              </div>
-            </Card>
-          ))}
-        </div>
+                  
+                  {/* Basic Info Always Visible */}
+                  <div className="p-2">
+                    <h3 className="font-medium text-sm truncate">{outfit.name}</h3>
+                    <p className="text-xs text-muted-foreground">{outfit.style}</p>
+                  </div>
+                </Card>
+              ))}
+            </div>
 
-        {filteredOutfits.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            <p>No outfits found matching your search.</p>
-          </div>
+            {filteredOutfits.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No outfits found matching your search.</p>
+              </div>
+            )}
+          </>
         )}
       </div>
 
