@@ -288,6 +288,24 @@ class ApiService {
         
         // Handle authentication errors (401/403) by clearing auth and redirecting to login
         if (response.status === 401 || response.status === 403) {
+          // Check if this is an authentication endpoint (login, signup, google token)
+          // where 401/403 is expected and should not trigger session expiration flow
+          const isAuthEndpoint = endpoint.includes('/auth/login') ||
+                                 endpoint.includes('/auth/signup') ||
+                                 endpoint.includes('/auth/google/token');
+          
+          if (isAuthEndpoint) {
+            // Treat as normal API error (invalid credentials)
+            toast.error('API Error', {
+              description: errorMessage,
+              duration: 5000,
+            });
+            const err = new Error(errorMessage);
+            (err as any)._toastShown = true;
+            throw err;
+          }
+          
+          // Otherwise, treat as session expiration
           // Clear authentication data
           this.clearAuthData();
           
@@ -306,7 +324,9 @@ class ApiService {
           }
           
           // Throw a specific error to prevent further processing
-          throw new Error('Authentication required');
+          const err = new Error('Authentication required');
+          (err as any)._toastShown = true;
+          throw err;
         } else if (response.status === 429) {
           // Handle quota exceeded - redirect to subscription page
           if (!this.hasQuotaRedirected) {
@@ -323,16 +343,19 @@ class ApiService {
           }
           
           // Throw a specific error to prevent further processing
-          throw new Error('Quota exceeded');
+          const err = new Error('Quota exceeded');
+          (err as any)._toastShown = true;
+          throw err;
         } else {
           // Show error toast for other API errors
           toast.error('API Error', {
             description: errorMessage,
             duration: 5000,
           });
+          const err = new Error(errorMessage);
+          (err as any)._toastShown = true;
+          throw err;
         }
-        
-        throw new Error(errorMessage);
       }
       
       const data = await response.json();
@@ -347,7 +370,7 @@ class ApiService {
             description: 'Unable to connect to the server. Please check your connection.',
             duration: 5000,
           });
-        } else if (!error.message.includes('HTTP error')) {
+        } else if (!error.message.includes('HTTP error') && !(error as any)._toastShown) {
           // Only show generic errors that aren't already shown above
           toast.error('Error', {
             description: error.message,
