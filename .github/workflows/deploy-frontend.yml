@@ -26,10 +26,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
-      - name: Install dependencies (robust — install devDeps for build)
+      - name: Install dependencies
         run: |
           set -e
-          # Ensure devDependencies are installed for the build
           export npm_config_production=false
           echo "npm_config_production=$npm_config_production"
 
@@ -59,7 +58,6 @@ jobs:
       - name: Build frontend
         run: npm run build
         env:
-          # make sure optional deps remain disabled during build if fallback path ran
           npm_config_optional: false
 
       - name: Deploy build folder to cPanel via FTP
@@ -70,9 +68,9 @@ jobs:
           password: ${{ secrets.FRONTEND_FTP_PASSWORD }}
           port: 21
           protocol: ftp
-          local-dir: build/           # <-- change to "dist/" if your build outputs dist/
-          server-dir: ./              # FTP user's home should map to public_html
-          dangerous-clean-slate: true
+          local-dir: build/
+          server-dir: ./
+          # Removed dangerous-clean-slate to preserve .htaccess
           exclude: |
             **/.git*
             **/.github*
