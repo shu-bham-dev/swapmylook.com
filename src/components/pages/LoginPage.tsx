@@ -20,7 +20,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { apiService } from '../../services/api';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 
 interface LoginPageProps {
   onLogin: () => void;

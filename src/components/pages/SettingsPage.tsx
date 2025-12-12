@@ -20,7 +20,7 @@ import {
   Upload
 } from 'lucide-react';
 import { apiService, type UserProfile } from '../../services/api';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 
 interface SettingsPageProps {
   onPageChange: (page: string) => void;

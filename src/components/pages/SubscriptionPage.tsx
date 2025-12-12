@@ -16,7 +16,7 @@ import {
   Heart
 } from 'lucide-react';
 import { apiService } from '../../services/api.ts';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 
 interface SubscriptionPageProps {
   onPageChange: (page: string) => void;

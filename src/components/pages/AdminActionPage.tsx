@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Checkbox } from '../ui/checkbox';
 import { Upload, Loader2 } from 'lucide-react';
 import { apiService } from '../../services/api';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 
 const AdminActionPage = () => {
   const navigate = useNavigate();
