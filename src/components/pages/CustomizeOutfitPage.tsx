@@ -25,8 +25,8 @@ export function CustomizeOutfitPage({ onPageChange }: CustomizeOutfitPageProps) 
     {
       before: '/images/acc-what1.jpeg',
       after: '/images/acc-what2.webp',
-      title: 'Casual to Formal Transformation',
-      description: 'See how our AI outfit changer can transform a simple casual look into elegant formal wear with perfect fit and lighting matching.'
+      title: 'Dress Transformation',
+      description: 'Instantly reimagine your outfit. Upload a photo and see your dress transformed into multiple formal and elegant designs with perfect fit and style adaptation'
     },
     {
       before: '/images/acc-what3.webp',

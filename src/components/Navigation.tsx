@@ -9,7 +9,8 @@ import {
   CreditCard,
   LogOut,
   Heart,
-  Shirt
+  Shirt,
+  Loader2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -28,9 +29,10 @@ interface NavigationProps {
   onLogout?: () => void;
   isLoggedIn?: boolean;
   userCredits?: number;
+  logoutLoading?: boolean;
 }
 
-export function Navigation({ currentPage, onPageChange, onLogout, isLoggedIn = false, userCredits = 25 }: NavigationProps) {
+export function Navigation({ currentPage, onPageChange, onLogout, isLoggedIn = false, userCredits = 25, logoutLoading = false }: NavigationProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [userQuota, setUserQuota] = useState<{
     monthlyRequests: number;
@@ -140,15 +142,22 @@ export function Navigation({ currentPage, onPageChange, onLogout, isLoggedIn = f
                       </DropdownMenuItem>
                     ))}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => {
-                      if (onLogout) {
-                        onLogout();
-                      } else {
-                        onPageChange('login');
-                      }
-                    }}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Log out</span>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        if (!logoutLoading && onLogout) {
+                          onLogout();
+                        } else if (!logoutLoading) {
+                          onPageChange('login');
+                        }
+                      }}
+                      disabled={logoutLoading}
+                    >
+                      {logoutLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <LogOut className="mr-2 h-4 w-4" />
+                      )}
+                      <span>{logoutLoading ? 'Logging out...' : 'Log out'}</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -228,17 +237,22 @@ export function Navigation({ currentPage, onPageChange, onLogout, isLoggedIn = f
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      if (onLogout) {
+                      if (!logoutLoading && onLogout) {
                         onLogout();
-                      } else {
+                      } else if (!logoutLoading) {
                         onPageChange('login');
                       }
                       setIsMobileMenuOpen(false);
                     }}
+                    disabled={logoutLoading}
                     className="w-full justify-start text-gray-600"
                   >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Sign Out
+                    {logoutLoading ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <LogOut className="w-4 h-4 mr-2" />
+                    )}
+                    {logoutLoading ? 'Logging out...' : 'Sign Out'}
                   </Button>
                 </>
               ) : (

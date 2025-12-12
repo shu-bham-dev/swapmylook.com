@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 import { CheckCircle, AlertCircle, Sparkles } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
 import { apiService } from '../../services/api';
-import { toast } from 'sonner';
+import { toast } from '../../utils/toast';
 
 interface AuthSuccessPageProps {
   onLogin: () => void;

@@ -10,7 +10,7 @@ import { Footer } from './components/Footer';
 import { Card } from './components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './components/ui/accordion';
 import { apiService } from './services/api';
-import { Toaster, toast } from 'sonner';
+import { Toaster, toast } from './utils/toast';
 
 // Lazy load page components with proper typing
 const LoginPage = lazy(() => import('./components/pages/LoginPage').then(module => ({ default: module.LoginPage })));
@@ -50,6 +50,7 @@ function AppContent() {
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<'queued' | 'processing' | 'succeeded' | 'failed' | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [logoutLoading, setLogoutLoading] = useState(false);
 
   // Initialize authentication on app start
   useEffect(() => {
@@ -90,11 +91,6 @@ function AppContent() {
 
   // Handle page navigation
   const handlePageChange = (page: string) => {
-    if (page === 'login' && !isLoggedIn) {
-      toast.info('Please login to continue', {
-        description: 'You need to be logged in to access this feature.',
-      });
-    }
     navigate(`/${page === 'home' ? '' : page}`);
   };
 
@@ -281,9 +277,9 @@ function AppContent() {
               className="w-full h-48 object-cover"
             />
             <div className="p-6">
-              <h3 className="font-semibold mb-2">Casual to Formal Magic</h3>
+              <h3 className="font-semibold mb-2">Dress Transformation</h3>
               <p className="text-sm text-muted-foreground">
-                See how our AI can transform everyday looks into elegant formal wear instantly.
+                Instantly reimagine your outfit. Upload a photo and see your dress transformed into multiple formal and elegant designs with perfect fit and style adaptation
               </p>
             </div>
           </Card>
@@ -376,6 +372,7 @@ function AppContent() {
 
   // Handle logout
   const handleLogout = async () => {
+    setLogoutLoading(true);
     try {
       await apiService.logout();
       toast.success('Logged out', {
@@ -393,6 +390,7 @@ function AppContent() {
       setSelectedOutfit(null);
       setHistory([]);
       setHistoryIndex(-1);
+      setLogoutLoading(false);
       navigate('/');
     }
   };
@@ -428,6 +426,7 @@ function AppContent() {
           isLoggedIn={isLoggedIn}
           userCredits={25}
           onLogout={handleLogout}
+          logoutLoading={logoutLoading}
         />
       )}
       
@@ -492,6 +491,12 @@ function AppContent() {
         expand={true}
         richColors
         closeButton
+        visibleToasts={3}
+        toastOptions={{
+          // Prevent duplicate toasts by using consistent IDs
+          // Note: For automatic duplicate prevention, we'd need a wrapper
+          // This at least limits the number of visible toasts
+        }}
       />
     </div>
   );

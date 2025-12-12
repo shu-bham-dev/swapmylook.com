@@ -21,7 +21,7 @@ interface TermsPageProps {
 }
 
 export function TermsPage({ onPageChange }: TermsPageProps) {
-  const lastUpdated = "December 15, 2024";
+  const lastUpdated = "December 15, 2025";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
@@ -112,7 +112,7 @@ export function TermsPage({ onPageChange }: TermsPageProps) {
                     <ul className="text-sm text-muted-foreground space-y-1 ml-4">
                       <li>• Name and email address</li>
                       <li>• Profile information you choose to provide</li>
-                      <li>• Payment information (processed securely by Stripe)</li>
+                      <li>• Payment information (processed securely by Dodo Payments)</li>
                       <li>• Communication preferences</li>
                     </ul>
                   </div>
@@ -138,8 +138,6 @@ export function TermsPage({ onPageChange }: TermsPageProps) {
                     <ul className="text-sm text-muted-foreground space-y-1 ml-4">
                       <li>• Features you use and how often</li>
                       <li>• Performance metrics and error reports</li>
-                      <li>• Device and browser information</li>
-                      <li>• IP address and general location (city/country)</li>
                     </ul>
                   </div>
                 </div>
@@ -234,26 +232,6 @@ export function TermsPage({ onPageChange }: TermsPageProps) {
                       </ul>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onPageChange('settings')}
-                      className="text-pink-600 border-pink-200"
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download My Data
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onPageChange('contact')}
-                      className="text-blue-600 border-blue-200"
-                    >
-                      <Mail className="w-4 h-4 mr-2" />
-                      Contact Privacy Team
-                    </Button>
-                  </div>
                 </div>
               </Card>
             </div>
@@ -327,7 +305,7 @@ export function TermsPage({ onPageChange }: TermsPageProps) {
                     <h4 className="font-medium mb-2 text-gray-900">Billing</h4>
                     <p>
                       Subscription fees are billed in advance on a monthly or yearly basis. All payments are processed 
-                      securely through Stripe. Prices may change with 30 days notice to existing subscribers.
+                      securely through Dodo payments. Prices may change with 30 days notice to existing subscribers.
                     </p>
                   </div>
                   

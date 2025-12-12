@@ -26,7 +26,8 @@ import {
   Filter,
   Grid,
   List,
-  Repeat
+  Repeat,
+  Loader2
 } from 'lucide-react';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { apiService } from '../../services/api';
@@ -97,6 +98,9 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [pagination, setPagination] = useState<{ page: number; limit: number; total: number; pages: number } | null>(null);
+  const [favoriteLoading, setFavoriteLoading] = useState<Record<string, boolean>>({});
+  const [deleteLoading, setDeleteLoading] = useState<Record<string, boolean>>({});
+  const [downloadLoading, setDownloadLoading] = useState<Record<string, boolean>>({});
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -138,11 +142,12 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
   };
 
   const handleFavoriteToggle = async (outfitId: string, currentFavorite: boolean) => {
+    setFavoriteLoading(prev => ({ ...prev, [outfitId]: true }));
     try {
       await apiService.toggleOutfitFavorite(outfitId, !currentFavorite);
       // Update local state
-      setOutfits(prev => prev.map(outfit => 
-        outfit.id === outfitId 
+      setOutfits(prev => prev.map(outfit =>
+        outfit.id === outfitId
           ? { ...outfit, favorite: !currentFavorite }
           : outfit
       ));
@@ -150,10 +155,13 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
       loadStats();
     } catch (err) {
       console.error('Failed to toggle favorite:', err);
+    } finally {
+      setFavoriteLoading(prev => ({ ...prev, [outfitId]: false }));
     }
   };
 
   const performDeleteOutfit = async (outfitId: string) => {
+    setDeleteLoading(prev => ({ ...prev, [outfitId]: true }));
     try {
       await apiService.deleteOutfit(outfitId);
       // Remove from local state
@@ -165,7 +173,18 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
     } catch (err) {
       console.error('Failed to delete outfit:', err);
       alert('Failed to delete image. Please try again.');
+    } finally {
+      setDeleteLoading(prev => ({ ...prev, [outfitId]: false }));
     }
+  };
+
+  const handleDownload = (outfitId: string, url: string) => {
+    setDownloadLoading(prev => ({ ...prev, [outfitId]: true }));
+    window.open(url, '_blank');
+    // Simulate loading for 1 second to give feedback
+    setTimeout(() => {
+      setDownloadLoading(prev => ({ ...prev, [outfitId]: false }));
+    }, 1000);
   };
 
   const openDeleteDialog = (outfit: Outfit) => {
@@ -421,23 +440,38 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
                         <Button
                           size="sm"
                           variant="secondary"
-                          onClick={() => window.open(outfit.url, '_blank')}
+                          onClick={() => handleDownload(outfit.id, outfit.url)}
+                          disabled={downloadLoading[outfit.id] || false}
                         >
-                          <Download className="w-4 h-4" />
+                          {downloadLoading[outfit.id] ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Download className="w-4 h-4" />
+                          )}
                         </Button>
                         <Button
                           size="sm"
                           variant="secondary"
                           onClick={() => handleFavoriteToggle(outfit.id, outfit.favorite)}
+                          disabled={favoriteLoading[outfit.id] || false}
                         >
-                          <Heart className={`w-4 h-4 ${outfit.favorite ? 'fill-red-500 text-red-500' : ''}`} />
+                          {favoriteLoading[outfit.id] ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Heart className={`w-4 h-4 ${outfit.favorite ? 'fill-red-500 text-red-500' : ''}`} />
+                          )}
                         </Button>
                         <Button
                           size="sm"
                           variant="secondary"
                           onClick={() => openDeleteDialog(outfit)}
+                          disabled={deleteLoading[outfit.id] || false}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          {deleteLoading[outfit.id] ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
                         </Button>
                       </div>
                     </div>
@@ -539,23 +573,38 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => window.open(outfit.url, '_blank')}
+                        onClick={() => handleDownload(outfit.id, outfit.url)}
+                        disabled={downloadLoading[outfit.id] || false}
                       >
-                        <Download className="w-4 h-4" />
+                        {downloadLoading[outfit.id] ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Download className="w-4 h-4" />
+                        )}
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleFavoriteToggle(outfit.id, outfit.favorite)}
+                        disabled={favoriteLoading[outfit.id] || false}
                       >
-                        <Heart className={`w-4 h-4 ${outfit.favorite ? 'fill-red-500 text-red-500' : ''}`} />
+                        {favoriteLoading[outfit.id] ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Heart className={`w-4 h-4 ${outfit.favorite ? 'fill-red-500 text-red-500' : ''}`} />
+                        )}
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => openDeleteDialog(outfit)}
+                        disabled={deleteLoading[outfit.id] || false}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        {deleteLoading[outfit.id] ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -652,26 +701,41 @@ export function MyHistoryPage({ onPageChange }: MyHistoryPageProps) {
                 </div>
                 <div className="flex flex-col space-y-2">
                   <Button
-                    onClick={() => selectedOutfit && window.open(selectedOutfit.url, '_blank')}
+                    onClick={() => selectedOutfit && handleDownload(selectedOutfit.id, selectedOutfit.url)}
                     className="w-full"
+                    disabled={selectedOutfit && downloadLoading[selectedOutfit.id] || false}
                   >
-                    <Download className="w-4 h-4 mr-2" />
+                    {selectedOutfit && downloadLoading[selectedOutfit.id] ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4 mr-2" />
+                    )}
                     Download
                   </Button>
                   <Button
                     variant="outline"
                     onClick={() => selectedOutfit && handleFavoriteToggle(selectedOutfit.id, selectedOutfit.favorite)}
                     className="w-full"
+                    disabled={selectedOutfit && favoriteLoading[selectedOutfit.id] || false}
                   >
-                    <Heart className={`w-4 h-4 mr-2 ${selectedOutfit?.favorite ? 'fill-red-500 text-red-500' : ''}`} />
+                    {selectedOutfit && favoriteLoading[selectedOutfit.id] ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Heart className={`w-4 h-4 mr-2 ${selectedOutfit?.favorite ? 'fill-red-500 text-red-500' : ''}`} />
+                    )}
                     {selectedOutfit?.favorite ? 'Remove from Favorites' : 'Add to Favorites'}
                   </Button>
                   <Button
                     variant="destructive"
                     onClick={() => selectedOutfit && openDeleteDialog(selectedOutfit)}
                     className="w-full"
+                    disabled={selectedOutfit && deleteLoading[selectedOutfit.id] || false}
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
+                    {selectedOutfit && deleteLoading[selectedOutfit.id] ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4 mr-2" />
+                    )}
                     Delete
                   </Button>
                 </div>

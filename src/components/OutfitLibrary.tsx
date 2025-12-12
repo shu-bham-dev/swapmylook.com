@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Search, Heart, Star, Upload, Plus, X, Sparkles, Download, RotateCcw, Trash2 } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { apiService } from '../services/api';
-import { toast } from 'sonner';
+import { toast } from '../utils/toast';
 
 export interface Outfit {
   id: string;
