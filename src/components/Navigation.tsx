@@ -172,13 +172,6 @@ export function Navigation({ currentPage, onPageChange, onLogout, isLoggedIn = f
                 >
                   Sign In
                 </Button>
-                <Button
-                  size="sm"
-                  onClick={() => onPageChange('login')}
-                  className="bg-pink-500 hover:bg-pink-600 text-white"
-                >
-                  Get Started
-                </Button>
               </div>
             )}
           </div>
@@ -267,16 +260,6 @@ export function Navigation({ currentPage, onPageChange, onLogout, isLoggedIn = f
                     className="w-full justify-start text-gray-600"
                   >
                     Sign In
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      onPageChange('login');
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="w-full bg-pink-500 hover:bg-pink-600 text-white"
-                  >
-                    Get Started
                   </Button>
                 </div>
               )}
