@@ -38,69 +38,6 @@ interface OutfitLibraryProps {
   selectedModel?: Model | null;
 }
 
-const outfits: Outfit[] = [
-  {
-    id: '1',
-    name: 'Summer Breeze',
-    image: 'https://images.unsplash.com/photo-1586024452802-86e0d084a4f9?w=400&h=500&fit=crop',
-    category: 'casual',
-    tags: ['flowy', 'light', 'comfortable'],
-    style: 'Bohemian',
-    season: 'Summer',
-    color: 'Light Blue',
-    rating: 4.8,
-    liked: false
-  },
-  {
-    id: '2',
-    name: 'Evening Elegance',
-    image: 'https://images.unsplash.com/photo-1678274342617-09c13eefab9f?w=400&h=500&fit=crop',
-    category: 'formal',
-    tags: ['elegant', 'sophisticated', 'glamorous'],
-    style: 'Classic',
-    season: 'All Season',
-    color: 'Black',
-    rating: 4.9,
-    liked: true
-  },
-  {
-    id: '3',
-    name: 'Urban Explorer',
-    image: 'https://images.unsplash.com/photo-1740381918234-d364ff4c5cb4?w=400&h=500&fit=crop',
-    category: 'casual',
-    tags: ['urban', 'trendy', 'versatile'],
-    style: 'Street',
-    season: 'Spring',
-    color: 'Navy',
-    rating: 4.7,
-    liked: false
-  },
-  {
-    id: '5',
-    name: 'Weekend Vibes',
-    image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&h=500&fit=crop',
-    category: 'casual',
-    tags: ['relaxed', 'cozy', 'weekend'],
-    style: 'Casual',
-    season: 'Fall',
-    color: 'Beige',
-    rating: 4.5,
-    liked: true
-  },
-  {
-    id: '6',
-    name: 'Party Ready',
-    image: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=400&h=500&fit=crop',
-    category: 'party',
-    tags: ['sparkly', 'fun', 'celebration'],
-    style: 'Glamorous',
-    season: 'All Season',
-    color: 'Gold',
-    rating: 4.8,
-    liked: false
-  }
-];
-
 export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }: OutfitLibraryProps) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -112,6 +49,7 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
   const [previewOutfit, setPreviewOutfit] = useState<Outfit | null>(null);
   const [fetchedOutfits, setFetchedOutfits] = useState<Outfit[]>([]);
   const [loadingOutfits, setLoadingOutfits] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Dialog and generation state
@@ -158,9 +96,11 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
           liked: false
         }));
         setFetchedOutfits(outfitsFromApi);
+        setFetchError(false);
       } catch (error) {
         console.error('Failed to fetch public outfits:', error);
-        // Keep empty, fallback to hardcoded outfits
+        setFetchError(true);
+        // Keep empty, no fallback
       } finally {
         setLoadingOutfits(false);
       }
@@ -213,7 +153,7 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
 
   // Determine which outfits to display based on active tab
   const outfitsToDisplay = activeOutfitTab === 'global'
-    ? (fetchedOutfits.length > 0 ? fetchedOutfits : outfits)
+    ? fetchedOutfits
     : [...userOutfits, ...customOutfits];
 
   const allOutfits = outfitsToDisplay;
@@ -660,10 +600,17 @@ export function OutfitLibrary({ onOutfitSelect, selectedOutfit, selectedModel }:
             <div className="animate-spin w-8 h-8 border-4 border-pink-500 border-t-transparent rounded-full" />
             <span className="ml-3 text-pink-600">Loading outfits...</span>
           </div>
+        ) : activeOutfitTab === 'global' && fetchError ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground mb-4">Failed to load outfits. Please try again later.</p>
+            <Button onClick={() => window.location.reload()} className="bg-pink-500 hover:bg-pink-600">
+              Retry
+            </Button>
+          </div>
         ) : filteredOutfits.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             {activeOutfitTab === 'global' ? (
-              <p>No outfits found matching your search.</p>
+              <p>No outfits available.</p>
             ) : (
               <>
                 <p>You haven't uploaded any outfits yet.</p>

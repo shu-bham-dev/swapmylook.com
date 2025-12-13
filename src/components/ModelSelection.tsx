@@ -19,27 +19,6 @@ interface ModelSelectionProps {
   selectedModel: Model | null;
 }
 
-const predefinedModels: Model[] = [
-  {
-    id: '1',
-    name: 'Aria',
-    image: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=600&fit=crop',
-    category: 'female'
-  },
-  {
-    id: '2', 
-    name: 'Marcus',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop',
-    category: 'male'
-  },
-  {
-    id: '3',
-    name: 'Luna',
-    image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=600&fit=crop',
-    category: 'female'
-  }
-];
-
 export function ModelSelection({ onModelSelect, selectedModel }: ModelSelectionProps) {
   const navigate = useNavigate();
   const [isUploading, setIsUploading] = useState(false);
@@ -49,6 +28,7 @@ export function ModelSelection({ onModelSelect, selectedModel }: ModelSelectionP
   const [loadingModels, setLoadingModels] = useState(true);
   const [loadingUserModels, setLoadingUserModels] = useState(false);
   const [activeTab, setActiveTab] = useState<'global' | 'you'>('global');
+  const [fetchError, setFetchError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check if user is authenticated
@@ -71,9 +51,11 @@ export function ModelSelection({ onModelSelect, selectedModel }: ModelSelectionP
           category: 'diverse' // default category, could be derived from tags if needed
         }));
         setFetchedModels(models);
+        setFetchError(false);
       } catch (error) {
         console.error('Failed to fetch public models:', error);
-        // Keep empty, fallback to predefinedModels
+        setFetchError(true);
+        // Keep empty, no fallback
       } finally {
         setLoadingModels(false);
       }
@@ -107,7 +89,7 @@ export function ModelSelection({ onModelSelect, selectedModel }: ModelSelectionP
 
   // Determine which models to display based on active tab
   const modelsToShow = activeTab === 'global'
-    ? (fetchedModels.length > 0 ? fetchedModels : predefinedModels)
+    ? fetchedModels
     : userModels;
   const isLoading = activeTab === 'global' ? loadingModels : loadingUserModels;
 
@@ -298,6 +280,17 @@ export function ModelSelection({ onModelSelect, selectedModel }: ModelSelectionP
           {isLoading ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin w-6 h-6 border-2 border-pink-500 border-t-transparent rounded-full" />
+            </div>
+          ) : fetchError ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground mb-4">Failed to load models. Please try again later.</p>
+              <Button onClick={() => window.location.reload()} className="bg-pink-500 hover:bg-pink-600">
+                Retry
+              </Button>
+            </div>
+          ) : modelsToShow.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No models available.</p>
             </div>
           ) : (
             <div className="flex space-x-4 overflow-x-auto pb-4 -mx-2 px-2">
