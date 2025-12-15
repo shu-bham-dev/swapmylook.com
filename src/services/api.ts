@@ -833,6 +833,63 @@ class ApiService {
   }
 
   /**
+   * Change subscription plan
+   */
+  async changeSubscriptionPlan(plan: string, prorationOption: 'prorated_immediately' | 'full_immediately' | 'difference_immediately' = 'prorated_immediately'): Promise<{
+    message: string;
+    subscription: {
+      plan: string;
+      status: string;
+      trialStatus: {
+        hasTrialRemaining: boolean;
+        trialUsed: boolean;
+        trialEndsAt: string;
+        daysRemaining: number;
+      };
+      usage: {
+        used: number;
+        limit: number;
+        remaining: number;
+      };
+      resetDate: string;
+      currentPeriodEnd?: string;
+    };
+  }> {
+    return this.request('/subscription/change-plan', {
+      method: 'POST',
+      body: JSON.stringify({ plan, prorationOption }),
+    });
+  }
+
+  /**
+   * Reactivate subscription
+   */
+  async reactivateSubscription(): Promise<{
+    message: string;
+    subscription: {
+      plan: string;
+      status: string;
+      trialStatus: {
+        hasTrialRemaining: boolean;
+        trialUsed: boolean;
+        trialEndsAt: string;
+        daysRemaining: number;
+      };
+      usage: {
+        used: number;
+        limit: number;
+        remaining: number;
+      };
+      resetDate: string;
+      currentPeriodEnd?: string;
+    };
+  }> {
+    return this.request('/subscription/reactivate', {
+      method: 'POST',
+    });
+  }
+
+  /**
    * Get usage statistics
    */
   async getUsageStatistics(): Promise<{
