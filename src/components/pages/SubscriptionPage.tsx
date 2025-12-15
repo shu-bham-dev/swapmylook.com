@@ -13,7 +13,8 @@ import {
   Users,
   CreditCard,
   Shield,
-  Heart
+  Heart,
+  RefreshCw
 } from 'lucide-react';
 import { apiService } from '../../services/api.ts';
 import { toast } from '../../utils/toast';
@@ -28,10 +29,143 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
   const [subscriptionData, setSubscriptionData] = useState<any>(null);
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [paymentStatus, setPaymentStatus] = useState<{
+    subscriptionId?: string;
+    status?: string;
+    message?: string;
+    type?: 'success' | 'warning' | 'info';
+  } | null>(null);
 
   useEffect(() => {
+    // Check for payment return parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const subscriptionId = urlParams.get('subscription_id');
+    const status = urlParams.get('status');
+
+    if (subscriptionId && status) {
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      // Set payment status message
+      let message = '';
+      let type: 'success' | 'warning' | 'info' = 'info';
+
+      switch (status) {
+        case 'active':
+          message = '🎉 Your subscription has been activated successfully!';
+          type = 'success';
+          break;
+        case 'pending':
+          message = '⏳ Your payment is being processed. This may take a few minutes.';
+          type = 'warning';
+          break;
+        case 'canceled':
+          message = '❌ Your subscription was cancelled.';
+          type = 'warning';
+          break;
+        case 'past_due':
+          message = '⚠️ Your payment failed. Please update your payment method.';
+          type = 'warning';
+          break;
+        default:
+          message = `Payment status: ${status}`;
+          type = 'info';
+      }
+
+      setPaymentStatus({
+        subscriptionId,
+        status,
+        message,
+        type
+      });
+
+      // Show toast notification
+      if (type === 'success') {
+        toast.success(message);
+      } else if (type === 'warning') {
+        toast.warning(message);
+      } else {
+        toast.info(message);
+      }
+    }
+
     fetchSubscriptionData();
   }, []);
+
+  // Poll for subscription status updates when payment is pending
+  useEffect(() => {
+    if (paymentStatus?.status === 'pending') {
+      const pollInterval = setInterval(async () => {
+        try {
+          const response = await apiService.getSubscriptionDetails();
+          const currentStatus = response.subscription.status;
+
+          if (currentStatus !== 'pending') {
+            // Status has changed
+            let message = '';
+            let type: 'success' | 'warning' | 'info' = 'info';
+
+            switch (currentStatus) {
+              case 'active':
+                message = '🎉 Your subscription has been activated successfully!';
+                type = 'success';
+                break;
+              case 'canceled':
+                message = '❌ Your subscription was cancelled.';
+                type = 'warning';
+                break;
+              case 'past_due':
+                message = '⚠️ Your payment failed. Please update your payment method.';
+                type = 'warning';
+                break;
+              default:
+                message = `Subscription status updated to: ${currentStatus}`;
+                type = 'info';
+            }
+
+            setPaymentStatus({
+              subscriptionId: paymentStatus.subscriptionId,
+              status: currentStatus,
+              message,
+              type
+            });
+
+            // Show toast notification
+            if (type === 'success') {
+              toast.success(message);
+            } else if (type === 'warning') {
+              toast.warning(message);
+            } else {
+              toast.info(message);
+            }
+
+            // Refresh subscription data
+            await fetchSubscriptionData();
+
+            // Stop polling
+            clearInterval(pollInterval);
+          }
+        } catch (error) {
+          console.error('Error polling subscription status:', error);
+        }
+      }, 5000); // Poll every 5 seconds
+
+      // Stop polling after 2 minutes
+      const timeout = setTimeout(() => {
+        clearInterval(pollInterval);
+        setPaymentStatus(prev => prev ? {
+          ...prev,
+          message: '⏳ Payment processing is taking longer than expected. Please refresh the page to check status.',
+          type: 'warning'
+        } : null);
+      }, 120000); // 2 minutes
+
+      return () => {
+        clearInterval(pollInterval);
+        clearTimeout(timeout);
+      };
+    }
+  }, [paymentStatus?.status]);
 
   const fetchSubscriptionData = async () => {
     try {
@@ -69,14 +203,35 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
 
     try {
       setSelectedPlan(planId);
-      const { url } = await apiService.createCheckoutSession(planId, billingCycle);
-      // Redirect to Dodo Payments hosted checkout
-      window.location.href = url;
-      // Note: after successful payment, webhook will update subscription
-      // The user will be redirected back to return_url (configured in backend)
+
+      // If user has an active subscription, use change plan instead of checkout
+      if (subscriptionData?.status === 'active' && subscriptionData?.plan !== 'free') {
+        const prorationOption = 'prorated_immediately'; // Default proration
+        await apiService.changeSubscriptionPlan(planId, prorationOption);
+        toast.success('Plan change initiated successfully. Changes will apply once payment is processed.');
+        await fetchSubscriptionData();
+      } else {
+        // New subscription or upgrading from free
+        const { url } = await apiService.createCheckoutSession(planId, billingCycle);
+        // Redirect to Dodo Payments hosted checkout
+        window.location.href = url;
+        // Note: after successful payment, webhook will update subscription
+        // The user will be redirected back to return_url (configured in backend)
+      }
     } catch (error) {
-      console.error('Failed to create checkout session:', error);
-      toast.error('Failed to start checkout. Please try again.');
+      console.error('Failed to process subscription change:', error);
+      toast.error('Failed to process subscription change. Please try again.');
+    }
+  };
+
+  const handleReactivate = async () => {
+    try {
+      await apiService.reactivateSubscription();
+      toast.success('Subscription reactivation initiated successfully.');
+      await fetchSubscriptionData();
+    } catch (error) {
+      console.error('Failed to reactivate subscription:', error);
+      toast.error('Failed to reactivate subscription. Please try again.');
     }
   };
 
@@ -114,6 +269,59 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Payment Status Alert */}
+        {paymentStatus && (
+          <Card className={`p-4 mb-6 border-l-4 ${
+            paymentStatus.type === 'success'
+              ? 'border-l-green-500 bg-green-50'
+              : paymentStatus.type === 'warning'
+              ? 'border-l-yellow-500 bg-yellow-50'
+              : 'border-l-blue-500 bg-blue-50'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  paymentStatus.type === 'success'
+                    ? 'bg-green-100 text-green-600'
+                    : paymentStatus.type === 'warning'
+                    ? 'bg-yellow-100 text-yellow-600'
+                    : 'bg-blue-100 text-blue-600'
+                }`}>
+                  {paymentStatus.type === 'success' ? '✓' :
+                   paymentStatus.type === 'warning' ? '⚠' : 'ℹ'}
+                </div>
+                <div>
+                  <p className={`font-medium ${
+                    paymentStatus.type === 'success'
+                      ? 'text-green-800'
+                      : paymentStatus.type === 'warning'
+                      ? 'text-yellow-800'
+                      : 'text-blue-800'
+                  }`}>
+                    {paymentStatus.message}
+                  </p>
+                  {paymentStatus.subscriptionId && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      Subscription ID: {paymentStatus.subscriptionId}
+                    </p>
+                  )}
+                </div>
+              </div>
+              {paymentStatus.message?.includes('taking longer than expected') && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.location.reload()}
+                  className="ml-4"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh
+                </Button>
+              )}
+            </div>
+          </Card>
+        )}
+
         {/* Header */}
         <div className="text-center space-y-4 mb-8">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
@@ -263,9 +471,18 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
                   {/* CTA Button */}
                   <div className="pt-4">
                     {isCurrentPlan ? (
-                      <Button variant="outline" className="w-full" disabled>
-                        Current Plan
-                      </Button>
+                      subscriptionData?.status === 'canceled' ? (
+                        <Button
+                          onClick={handleReactivate}
+                          className="w-full bg-green-500 hover:bg-green-600 text-white"
+                        >
+                          Reactivate Subscription
+                        </Button>
+                      ) : (
+                        <Button variant="outline" className="w-full" disabled>
+                          Current Plan
+                        </Button>
+                      )
                     ) : (
                       <Button
                         onClick={() => handleUpgrade(plan.id)}
@@ -278,7 +495,11 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
                             : 'bg-purple-500 hover:bg-purple-600'
                         } text-white`}
                       >
-                        {plan.id === 'free' ? 'Free Plan' : `Upgrade to ${plan.name}`}
+                        {plan.id === 'free'
+                          ? 'Free Plan'
+                          : subscriptionData?.status === 'active' && subscriptionData?.plan !== 'free'
+                          ? `Change to ${plan.name}`
+                          : `Upgrade to ${plan.name}`}
                       </Button>
                     )}
                   </div>
