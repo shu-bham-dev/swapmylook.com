@@ -67,11 +67,11 @@ export function Navigation({ currentPage, onPageChange, onLogout, isLoggedIn = f
     ...(isLoggedIn ? [{ id: 'history', label: 'My History', icon: Shirt }] : []),
     { id: 'blog', label: 'Blog', icon: BookOpen },
     { id: 'about', label: 'About', icon: Heart },
+    { id: 'subscription', label: 'Pricing', icon: CreditCard },
   ];
 
   const userMenuItems = [
     { id: 'settings', label: 'Settings', icon: Settings },
-    { id: 'subscription', label: 'Subscription', icon: CreditCard },
   ];
 
   return (

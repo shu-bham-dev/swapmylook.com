@@ -81,7 +81,7 @@ export function BlogPage({ onPageChange }: BlogPageProps) {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-6">
             <div className="flex justify-center">
-              <div className="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center backdrop-blur-sm">
+              <div className="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center backdrop-blur-sm mt-2">
                 <BookOpen className="w-10 h-10 text-white" />
               </div>
             </div>
