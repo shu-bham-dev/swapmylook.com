@@ -10,7 +10,8 @@ import {
   LogOut,
   Heart,
   Shirt,
-  Loader2
+  Loader2,
+  BookOpen
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -64,6 +65,7 @@ export function Navigation({ currentPage, onPageChange, onLogout, isLoggedIn = f
   const navigationItems = [
     { id: 'home', label: 'Style Studio', icon: Sparkles },
     ...(isLoggedIn ? [{ id: 'history', label: 'My History', icon: Shirt }] : []),
+    { id: 'blog', label: 'Blog', icon: BookOpen },
     { id: 'about', label: 'About', icon: Heart },
   ];
 
