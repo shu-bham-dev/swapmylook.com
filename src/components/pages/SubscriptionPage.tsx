@@ -92,9 +92,9 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
     fetchSubscriptionData();
   }, []);
 
-  // Poll for subscription status updates when payment is pending
+  // Poll for subscription status updates when payment is pending (only for authenticated users)
   useEffect(() => {
-    if (paymentStatus?.status === 'pending') {
+    if (paymentStatus?.status === 'pending' && apiService.isAuthenticated()) {
       const pollInterval = setInterval(async () => {
         try {
           const response = await apiService.getSubscriptionDetails();
@@ -170,17 +170,31 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
   const fetchSubscriptionData = async () => {
     try {
       setLoading(true);
-      const [subscriptionResponse, plansResponse] = await Promise.all([
-        apiService.getSubscriptionDetails(),
-        apiService.getSubscriptionPlans()
-      ]);
+      const isAuthenticated = apiService.isAuthenticated();
       
-      setSubscriptionData(subscriptionResponse.subscription);
-      setPlans(plansResponse.plans);
-      setSelectedPlan(subscriptionResponse.subscription.plan);
+      if (isAuthenticated) {
+        // For authenticated users, fetch both subscription details and plans
+        const [subscriptionResponse, plansResponse] = await Promise.all([
+          apiService.getSubscriptionDetails(),
+          apiService.getSubscriptionPlans()
+        ]);
+        
+        setSubscriptionData(subscriptionResponse.subscription);
+        setPlans(plansResponse.plans);
+        setSelectedPlan(subscriptionResponse.subscription.plan);
+      } else {
+        // For non-authenticated users, only fetch public plans
+        const plansResponse = await apiService.getPublicSubscriptionPlans();
+        setSubscriptionData(null); // No subscription data for non-logged-in users
+        setPlans(plansResponse.plans);
+        setSelectedPlan('free'); // Default to free plan for display
+      }
     } catch (error) {
       console.error('Failed to fetch subscription data:', error);
-      toast.error('Failed to load subscription data');
+      // Don't show error toast for non-authenticated users - it's expected
+      if (apiService.isAuthenticated()) {
+        toast.error('Failed to load subscription data');
+      }
     } finally {
       setLoading(false);
     }
@@ -198,6 +212,18 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
 
   const handleUpgrade = async (planId: string) => {
     if (planId === 'free') {
+      return;
+    }
+
+    // Check if user is authenticated
+    const isAuthenticated = apiService.isAuthenticated();
+    if (!isAuthenticated) {
+      // Redirect to login page with a message
+      toast.info('Please login or sign up to upgrade your plan');
+      // Redirect to login page after a short delay
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 1500);
       return;
     }
 
@@ -400,7 +426,7 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
           {plans.length > 0 ? plans.map((plan) => {
             const { price, period } = getPrice(plan);
             const Icon = plan.id === 'free' ? Heart : plan.id === 'basic' ? Sparkles : plan.id === 'premium' ? Crown : Users;
-            const isCurrentPlan = plan.id === (subscriptionData?.plan || 'free');
+            const isCurrentPlan = subscriptionData ? plan.id === subscriptionData.plan : false;
             
             // Define default styling for each plan
             const planStyles = {
@@ -499,7 +525,9 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
                           ? 'Free Plan'
                           : subscriptionData?.status === 'active' && subscriptionData?.plan !== 'free'
                           ? `Change to ${plan.name}`
-                          : `Upgrade to ${plan.name}`}
+                          : subscriptionData
+                          ? `Upgrade to ${plan.name}`
+                          : `Get ${plan.name}`}
                       </Button>
                     )}
                   </div>
