@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-// List of all pages in your application
+// List of all public pages in your application that should be indexed by search engines
 const pages = [
   {
     url: 'https://swapmylook.com/',
@@ -22,18 +22,6 @@ const pages = [
     lastmod: new Date().toISOString().split('T')[0]
   },
   {
-    url: 'https://swapmylook.com/help',
-    changefreq: 'monthly',
-    priority: '0.8',
-    lastmod: new Date().toISOString().split('T')[0]
-  },
-  {
-    url: 'https://swapmylook.com/profile',
-    changefreq: 'weekly',
-    priority: '0.9',
-    lastmod: new Date().toISOString().split('T')[0]
-  },
-  {
     url: 'https://swapmylook.com/subscription',
     changefreq: 'monthly',
     priority: '0.7',
@@ -43,6 +31,18 @@ const pages = [
     url: 'https://swapmylook.com/terms',
     changefreq: 'yearly',
     priority: '0.5',
+    lastmod: new Date().toISOString().split('T')[0]
+  },
+  {
+    url: 'https://swapmylook.com/blog',
+    changefreq: 'weekly',
+    priority: '0.8',
+    lastmod: new Date().toISOString().split('T')[0]
+  },
+  {
+    url: 'https://swapmylook.com/ai-clothes-changer',
+    changefreq: 'weekly',
+    priority: '0.8',
     lastmod: new Date().toISOString().split('T')[0]
   }
 ];
