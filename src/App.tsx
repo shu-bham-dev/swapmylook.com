@@ -27,6 +27,7 @@ const AdminActionPage = lazy(() => import('./components/pages/AdminActionPage').
 const BlogPage = lazy(() => import('./components/pages/BlogPage').then(module => ({ default: module.BlogPage })));
 const BlogDetailPage = lazy(() => import('./components/pages/BlogDetailPage').then(module => ({ default: module.BlogDetailPage })));
 const AIClothesChangerPage = lazy(() => import('./components/pages/AIClothesChangerPage').then(module => ({ default: module.AIClothesChangerPage })));
+const NotFoundPage = lazy(() => import('./components/pages/NotFoundPage').then(module => ({ default: module.NotFoundPage })));
 
 // Loading component for lazy loading
 const LoadingFallback = () => (
@@ -450,6 +451,16 @@ function AppContent() {
       {currentPage === 'admin-action' && <SEO title="Admin Upload - SwapMyLook" description="Upload images for models and outfits to be displayed on the homepage." url="https://swapmylook.com/admin-action" />}
       {currentPage === 'blog' && <SEO title="Blog - SwapMyLook AI Fashion Insights" description="Discover the latest in AI fashion, style tips, technology insights, and community stories from SwapMyLook." url="https://swapmylook.com/blog" />}
       {currentPage.startsWith('blog/') && <SEO title="Blog Article - SwapMyLook" description="Read this article on SwapMyLook blog about AI fashion and virtual try-on technology." url={`https://swapmylook.com/${currentPage}`} />}
+      {/* 404 Page SEO - show for any unknown route */}
+      {!['home', 'about', 'contact', 'ai-clothes-changer', 'settings', 'history', 'subscription', 'terms', 'admin-action', 'blog', 'login', 'otp-verification', 'auth/success'].includes(currentPage) &&
+        !currentPage.startsWith('blog/') && (
+          <SEO
+            title="Page Not Found - SwapMyLook"
+            description="The page you're looking for doesn't exist. Explore our AI fashion tools, outfit library, and style transformation features."
+            url={`https://swapmylook.com/${currentPage}`}
+          />
+        )
+      }
       
       {/* Navigation - show on all pages except login */}
       {currentPage !== 'login' && (
@@ -539,7 +550,11 @@ function AppContent() {
             <AIClothesChangerPage onPageChange={handlePageChange} />
           </Suspense>
         } />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={
+          <Suspense fallback={<LoadingFallback />}>
+            <NotFoundPage onPageChange={handlePageChange} />
+          </Suspense>
+        } />
       </Routes>
 
       {/* Footer - show on all pages except login */}
