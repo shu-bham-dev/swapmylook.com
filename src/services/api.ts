@@ -1,6 +1,6 @@
 // API service for communicating with the backend
-const API_BASE_URL = 'https://swapmylookcom-be-production.up.railway.app/api/v1';
-// const API_BASE_URL = 'http://localhost:3001/api/v1';
+// const API_BASE_URL = 'https://swapmylookcom-be-production.up.railway.app/api/v1';
+const API_BASE_URL = 'http://localhost:3001/api/v1';
 import { toast } from '../utils/toast';
 
 interface ApiResponse<T> {
@@ -192,6 +192,48 @@ class ApiService {
   }
 
   /**
+   * Send OTP for email verification
+   */
+  async sendOTP(email: string, purpose: 'signup' | 'login' | 'password_reset', name?: string): Promise<{ message: string; expiresIn: number }> {
+    return this.request('/auth/otp/send', {
+      method: 'POST',
+      body: JSON.stringify({ email, purpose, name }),
+    });
+  }
+
+  /**
+   * Verify OTP and complete authentication
+   */
+  async verifyOTP(
+    email: string,
+    code: string,
+    purpose: 'signup' | 'login' | 'password_reset',
+    name?: string,
+    password?: string
+  ): Promise<{ token?: string; user?: User; message?: string; resetToken?: string }> {
+    const response = await this.request<{ token?: string; user?: User; message?: string; resetToken?: string }>('/auth/otp/verify', {
+      method: 'POST',
+      body: JSON.stringify({ email, code, purpose, name, password }),
+    });
+
+    if (response.token && response.user) {
+      this.setAuthData(response.token, response.user);
+    }
+
+    return response;
+  }
+
+  /**
+   * Resend OTP
+   */
+  async resendOTP(email: string, purpose: 'signup' | 'login' | 'password_reset'): Promise<{ message: string; expiresIn: number }> {
+    return this.request('/auth/otp/resend', {
+      method: 'POST',
+      body: JSON.stringify({ email, purpose }),
+    });
+  }
+
+  /**
    * Get current user profile from server
    */
   async fetchCurrentUser(): Promise<{ user: User }> {
@@ -288,14 +330,17 @@ class ApiService {
         
         // Handle authentication errors (401/403) by clearing auth and redirecting to login
         if (response.status === 401 || response.status === 403) {
-          // Check if this is an authentication endpoint (login, signup, google token)
+          // Check if this is an authentication endpoint (login, signup, google token, OTP)
           // where 401/403 is expected and should not trigger session expiration flow
           const isAuthEndpoint = endpoint.includes('/auth/login') ||
                                  endpoint.includes('/auth/signup') ||
-                                 endpoint.includes('/auth/google/token');
+                                 endpoint.includes('/auth/google/token') ||
+                                 endpoint.includes('/auth/otp/verify') ||
+                                 endpoint.includes('/auth/otp/send') ||
+                                 endpoint.includes('/auth/otp/resend');
           
           if (isAuthEndpoint) {
-            // Treat as normal API error (invalid credentials)
+            // Treat as normal API error (invalid credentials or OTP)
             toast.error('API Error', {
               description: errorMessage,
               duration: 5000,

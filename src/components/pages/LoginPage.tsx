@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -17,7 +18,8 @@ import {
   Apple,
   ArrowRight,
   Heart,
-  AlertCircle
+  AlertCircle,
+  Smartphone
 } from 'lucide-react';
 import { apiService } from '../../services/api';
 import { toast } from '../../utils/toast';
@@ -28,6 +30,7 @@ interface LoginPageProps {
 }
 
 export function LoginPage({ onLogin, onPageChange }: LoginPageProps) {
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
@@ -51,45 +54,70 @@ export function LoginPage({ onLogin, onPageChange }: LoginPageProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate password for signup
-    if (!isLogin) {
-      const error = validatePassword(password);
-      if (error) {
-        setPasswordError(error);
-        toast.dismiss();
-        toast.error('Password validation failed', {
-          description: error,
-        });
-        return;
-      }
-    }
-    
-    setIsLoading(true);
-    toast.dismiss(); // Clear any previous toasts before API call
-    
-    try {
-      if (isLogin) {
-        // Login with email and password
+    if (isLogin) {
+      // Login with email and password
+      setIsLoading(true);
+      toast.dismiss(); // Clear any previous toasts before API call
+      
+      try {
         await apiService.login(email, password, rememberMe);
         toast.dismiss();
         toast.success('Welcome back!', {
           description: 'You have successfully logged in.',
         });
-      } else {
-        // Sign up with email, password, and name
-        await apiService.signup(email, password, name);
-        toast.dismiss();
-        toast.success('Account created!', {
-          description: 'Your account has been created successfully.',
-        });
+        onLogin();
+        onPageChange('home');
+      } catch (error) {
+        // Error handling is now done by the API service
+        console.error('Authentication failed:', error);
+      } finally {
+        setIsLoading(false);
       }
-      onLogin();
-      onPageChange('home');
-    } catch (error) {
-      // Error handling is now done by the API service
-      console.error('Authentication failed:', error);
-    } finally {
-      setIsLoading(false);
+    } else {
+      // Signup: validate and send OTP
+      if (!email || !name || !password) {
+        toast.error('Validation failed', {
+          description: 'All fields are required for signup.',
+        });
+        return;
+      }
+      
+      // Validate password
+      const passwordError = validatePassword(password);
+      if (passwordError) {
+        setPasswordError(passwordError);
+        toast.dismiss();
+        toast.error('Password validation failed', {
+          description: passwordError,
+        });
+        return;
+      }
+      
+      setIsLoading(true);
+      toast.dismiss();
+      
+      try {
+        // Send OTP for signup (password will be used during OTP verification)
+        await apiService.sendOTP(email, 'signup', name);
+        toast.dismiss();
+        toast.success('OTP sent!', {
+          description: 'A verification code has been sent to your email.',
+        });
+        
+        // Navigate to OTP verification page with email, name, and password
+        navigate('/otp-verification', {
+          state: {
+            email,
+            name,
+            password,
+            purpose: 'signup'
+          }
+        });
+      } catch (error) {
+        console.error('Failed to send OTP:', error);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -158,6 +186,7 @@ export function LoginPage({ onLogin, onPageChange }: LoginPageProps) {
             </div>
           </div>
 
+
           {/* Email/Password Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
@@ -191,13 +220,14 @@ export function LoginPage({ onLogin, onPageChange }: LoginPageProps) {
               </div>
             </div>
 
+            {/* Password field - always show for both login and signup */}
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder={isLogin ? "Enter your password" : "Create a password"}
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);

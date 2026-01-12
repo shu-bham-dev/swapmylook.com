@@ -5,7 +5,8 @@ import { ModelSelection } from './components/ModelSelection';
 import { OutfitLibrary, type Outfit } from './components/OutfitLibrary';
 
 import { ControlsPanel } from './components/ControlsPanel';
-import { SEO, homePageSEO } from './components/SEO';
+import { SEO } from './components/SEO';
+import { homePageSEO, aboutPageSEO, contactPageSEO, helpPageSEO, aiClothesChangerSEO } from './seo/seo.config';
 import { Footer } from './components/Footer';
 import { Card } from './components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './components/ui/accordion';
@@ -14,6 +15,7 @@ import { Toaster, toast } from './utils/toast';
 
 // Lazy load page components with proper typing
 const LoginPage = lazy(() => import('./components/pages/LoginPage').then(module => ({ default: module.LoginPage })));
+const OTPVerificationPage = lazy(() => import('./components/pages/OTPVerificationPage').then(module => ({ default: module.OTPVerificationPage })));
 const SettingsPage = lazy(() => import('./components/pages/SettingsPage').then(module => ({ default: module.SettingsPage })));
 const MyHistoryPage = lazy(() => import('./components/pages/MyHistoryPage').then(module => ({ default: module.MyHistoryPage })));
 const SubscriptionPage = lazy(() => import('./components/pages/SubscriptionPage').then(module => ({ default: module.SubscriptionPage })));
@@ -24,6 +26,7 @@ const AuthSuccessPage = lazy(() => import('./components/pages/AuthSuccessPage').
 const AdminActionPage = lazy(() => import('./components/pages/AdminActionPage').then(module => ({ default: module.default })));
 const BlogPage = lazy(() => import('./components/pages/BlogPage').then(module => ({ default: module.BlogPage })));
 const BlogDetailPage = lazy(() => import('./components/pages/BlogDetailPage').then(module => ({ default: module.BlogDetailPage })));
+const AIClothesChangerPage = lazy(() => import('./components/pages/AIClothesChangerPage').then(module => ({ default: module.AIClothesChangerPage })));
 
 // Loading component for lazy loading
 const LoadingFallback = () => (
@@ -31,6 +34,31 @@ const LoadingFallback = () => (
     <div className="w-12 h-12 border-4 border-pink-200 rounded-full animate-spin border-t-pink-500"></div>
   </div>
 );
+
+// OTP Verification wrapper to read location state
+const OTPVerificationWrapper = ({ onVerificationComplete, onBack }: {
+  onVerificationComplete: (result: any) => void;
+  onBack: () => void;
+}) => {
+  const location = useLocation();
+  const { email, name, password, purpose } = location.state || {};
+
+  if (!email || !purpose) {
+    // Redirect back to login if no state
+    return <Navigate to="/login" replace />;
+  }
+
+  return (
+    <OTPVerificationPage
+      email={email}
+      purpose={purpose || 'signup'}
+      name={name}
+      password={password} // Pass password from location state
+      onVerificationComplete={onVerificationComplete}
+      onBack={onBack}
+    />
+  );
+};
 
 interface Model {
   id: string;
@@ -412,15 +440,16 @@ function AppContent() {
     <div className="min-h-screen">
       {/* SEO for current page */}
       {currentPage === 'home' && <SEO {...homePageSEO} />}
-      {currentPage === 'about' && <SEO title="About Swap My Look - AI Fashion Technology" description="Learn about our AI-powered fashion technology and how we're revolutionizing virtual try-ons and outfit selection." url="https://swapmylook.com/about" />}
-      {currentPage === 'contact' && <SEO title="Contact Us - Swap My Look Support" description="Get in touch with the Swap My Look team for support, partnerships, or any questions about our AI fashion technology." url="https://swapmylook.com/contact" />}
-      {currentPage === 'settings' && <SEO title="Settings - Swap My Look" description="Manage your account settings, preferences, and security options." url="https://swapmylook.com/settings" />}
-      {currentPage === 'history' && <SEO title="My History - Swap My Look" description="View and manage your uploaded models, outfits, and AI-generated images." url="https://swapmylook.com/history" />}
-      {currentPage === 'subscription' && <SEO title="Subscription Plans - Swap My Look" description="Choose the perfect subscription plan for unlimited AI outfit changes and premium features." url="https://swapmylook.com/subscription" />}
-      {currentPage === 'terms' && <SEO title="Terms of Service - Swap My Look" description="Read our terms of service and privacy policy for using the Swap My Look AI fashion platform." url="https://swapmylook.com/terms" />}
-      {currentPage === 'admin-action' && <SEO title="Admin Upload - Swap My Look" description="Upload images for models and outfits to be displayed on the homepage." url="https://swapmylook.com/admin-action" />}
-      {currentPage === 'blog' && <SEO title="Blog - Swap My Look AI Fashion Insights" description="Discover the latest in AI fashion, style tips, technology insights, and community stories from Swap My Look." url="https://swapmylook.com/blog" />}
-      {currentPage.startsWith('blog/') && <SEO title="Blog Article - Swap My Look" description="Read this article on Swap My Look blog about AI fashion and virtual try-on technology." url={`https://swapmylook.com/${currentPage}`} />}
+      {currentPage === 'about' && <SEO {...aboutPageSEO} />}
+      {currentPage === 'contact' && <SEO {...contactPageSEO} />}
+      {currentPage === 'ai-clothes-changer' && <SEO {...aiClothesChangerSEO} />}
+      {currentPage === 'settings' && <SEO title="Settings - SwapMyLook" description="Manage your account settings, preferences, and security options." url="https://swapmylook.com/settings" />}
+      {currentPage === 'history' && <SEO title="My History - SwapMyLook" description="View and manage your uploaded models, outfits, and AI-generated images." url="https://swapmylook.com/history" />}
+      {currentPage === 'subscription' && <SEO title="Subscription Plans - SwapMyLook" description="Choose the perfect subscription plan for unlimited AI outfit changes and premium features." url="https://swapmylook.com/subscription" />}
+      {currentPage === 'terms' && <SEO title="Terms of Service - SwapMyLook" description="Read our terms of service and privacy policy for using the SwapMyLook AI fashion platform." url="https://swapmylook.com/terms" />}
+      {currentPage === 'admin-action' && <SEO title="Admin Upload - SwapMyLook" description="Upload images for models and outfits to be displayed on the homepage." url="https://swapmylook.com/admin-action" />}
+      {currentPage === 'blog' && <SEO title="Blog - SwapMyLook AI Fashion Insights" description="Discover the latest in AI fashion, style tips, technology insights, and community stories from SwapMyLook." url="https://swapmylook.com/blog" />}
+      {currentPage.startsWith('blog/') && <SEO title="Blog Article - SwapMyLook" description="Read this article on SwapMyLook blog about AI fashion and virtual try-on technology." url={`https://swapmylook.com/${currentPage}`} />}
       
       {/* Navigation - show on all pages except login */}
       {currentPage !== 'login' && (
@@ -440,6 +469,19 @@ function AppContent() {
         <Route path="/login" element={
           <Suspense fallback={<LoadingFallback />}>
             <LoginPage onLogin={handleLogin} onPageChange={handlePageChange} />
+          </Suspense>
+        } />
+        <Route path="/otp-verification" element={
+          <Suspense fallback={<LoadingFallback />}>
+            <OTPVerificationWrapper
+              onVerificationComplete={(result) => {
+                if (result.token && result.user) {
+                  handleLogin();
+                  handlePageChange('home');
+                }
+              }}
+              onBack={() => handlePageChange('login')}
+            />
           </Suspense>
         } />
         <Route path="/settings" element={
@@ -490,6 +532,11 @@ function AppContent() {
         <Route path="/blog/:slug" element={
           <Suspense fallback={<LoadingFallback />}>
             <BlogDetailPage onPageChange={handlePageChange} />
+          </Suspense>
+        } />
+        <Route path="/ai-clothes-changer" element={
+          <Suspense fallback={<LoadingFallback />}>
+            <AIClothesChangerPage onPageChange={handlePageChange} />
           </Suspense>
         } />
         <Route path="*" element={<Navigate to="/" replace />} />
