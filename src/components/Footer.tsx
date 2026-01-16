@@ -1,4 +1,4 @@
-import { Heart, Mail, Github, Twitter, Instagram } from 'lucide-react';
+import { Heart, Mail, Github, Twitter, Instagram, Wrench, Sparkles, Grid3x3 } from 'lucide-react';
 import { Button } from './ui/button';
 
 export function Footer() {
@@ -7,7 +7,7 @@ export function Footer() {
   return (
     <footer className="bg-white border-t border-pink-100 mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
@@ -22,7 +22,6 @@ export function Footer() {
               AI‑powered fashion visualization for everyone. Try on outfits virtually with cutting‑edge technology.
             </p>
           </div>
-
 
           {/* Company */}
           <div>
@@ -46,6 +45,25 @@ export function Footer() {
               <li>
                 <a href="/terms" className="text-muted-foreground hover:text-pink-600 transition-colors">
                   Privacy Policy
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Tools */}
+          <div>
+            <h3 className="font-semibold text-gray-800 mb-4">Tools</h3>
+            <ul className="space-y-3 text-sm">
+              <li>
+                <a href="/tools" className="text-muted-foreground hover:text-pink-600 transition-colors flex items-center">
+                  <Wrench className="w-4 h-4 mr-2" />
+                  All Tools
+                </a>
+              </li>
+              <li>
+                <a href="/tools/generative-ai-quilt-design" className="text-muted-foreground hover:text-pink-600 transition-colors flex items-center">
+                  <Grid3x3 className="w-4 h-4 mr-2" />
+                  Generative AI Quilt Design
                 </a>
               </li>
             </ul>

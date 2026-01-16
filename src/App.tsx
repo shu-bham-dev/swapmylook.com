@@ -6,7 +6,7 @@ import { OutfitLibrary, type Outfit } from './components/OutfitLibrary';
 
 import { ControlsPanel } from './components/ControlsPanel';
 import { SEO } from './components/SEO';
-import { homePageSEO, aboutPageSEO, contactPageSEO, helpPageSEO, aiClothesChangerSEO } from './seo/seo.config';
+import { homePageSEO, aboutPageSEO, contactPageSEO, helpPageSEO, aiClothesChangerSEO, toolsPageSEO, generativeAIQuiltDesignSEO } from './seo/seo.config';
 import { Footer } from './components/Footer';
 import { Card } from './components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './components/ui/accordion';
@@ -27,6 +27,8 @@ const AdminActionPage = lazy(() => import('./components/pages/AdminActionPage').
 const BlogPage = lazy(() => import('./components/pages/BlogPage').then(module => ({ default: module.BlogPage })));
 const BlogDetailPage = lazy(() => import('./components/pages/BlogDetailPage').then(module => ({ default: module.BlogDetailPage })));
 const AIClothesChangerPage = lazy(() => import('./components/pages/AIClothesChangerPage').then(module => ({ default: module.AIClothesChangerPage })));
+const ToolsPage = lazy(() => import('./components/pages/ToolsPage').then(module => ({ default: module.ToolsPage })));
+const GenerativeAIQuiltDesignPage = lazy(() => import('./components/pages/GenerativeAIQuiltDesignPage').then(module => ({ default: module.GenerativeAIQuiltDesignPage })));
 const NotFoundPage = lazy(() => import('./components/pages/NotFoundPage').then(module => ({ default: module.NotFoundPage })));
 
 // Loading component for lazy loading
@@ -172,7 +174,7 @@ function AppContent() {
 
   // Render the main fashion tool page
   const renderHomePage = () => (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-white to-purple-50">
+    <div className="min-h-svh bg-gradient-to-br from-pink-50 via-white to-purple-50">
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -305,7 +307,7 @@ function AppContent() {
             <img
               src="/images/acc-what1.jpeg"
               alt="AI outfit transformation example"
-              className="w-full h-48 object-cover"
+              className="w-full h-full object-contain"
             />
             <div className="p-6">
               <h3 className="font-semibold mb-2">Dress Transformation</h3>
@@ -319,7 +321,7 @@ function AppContent() {
             <img
               src="/images/acc-what2.webp"
               alt="AI color transformation example"
-              className="w-full h-48 object-cover"
+              className="w-full h-full object-contain"
             />
             <div className="p-6">
               <h3 className="font-semibold mb-2">Color Transformation</h3>
@@ -333,7 +335,7 @@ function AppContent() {
             <img
               src="/images/acc-what3.webp"
               alt="AI seasonal style transformation"
-              className="w-full h-48 object-cover"
+              className="w-full h-full object-contain"
             />
             <div className="p-6">
               <h3 className="font-semibold mb-2">Seasonal Style Switch</h3>
@@ -438,7 +440,7 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-svh overflow-auto">
       {/* SEO for current page */}
       {currentPage === 'home' && <SEO {...homePageSEO} />}
       {currentPage === 'about' && <SEO {...aboutPageSEO} />}
@@ -451,9 +453,11 @@ function AppContent() {
       {currentPage === 'admin-action' && <SEO title="Admin Upload - SwapMyLook" description="Upload images for models and outfits to be displayed on the homepage." url="https://swapmylook.com/admin-action" />}
       {currentPage === 'blog' && <SEO title="Blog - SwapMyLook AI Fashion Insights" description="Discover the latest in AI fashion, style tips, technology insights, and community stories from SwapMyLook." url="https://swapmylook.com/blog" />}
       {currentPage.startsWith('blog/') && <SEO title="Blog Article - SwapMyLook" description="Read this article on SwapMyLook blog about AI fashion and virtual try-on technology." url={`https://swapmylook.com/${currentPage}`} />}
+      {currentPage === 'tools' && <SEO {...toolsPageSEO} />}
+      {currentPage === 'tools/generative-ai-quilt-design' && <SEO {...generativeAIQuiltDesignSEO} />}
       {/* 404 Page SEO - show for any unknown route */}
-      {!['home', 'about', 'contact', 'ai-clothes-changer', 'settings', 'history', 'subscription', 'terms', 'admin-action', 'blog', 'login', 'otp-verification', 'auth/success'].includes(currentPage) &&
-        !currentPage.startsWith('blog/') && (
+      {!['home', 'about', 'contact', 'ai-clothes-changer', 'settings', 'history', 'subscription', 'terms', 'admin-action', 'blog', 'tools', 'login', 'otp-verification', 'auth/success'].includes(currentPage) &&
+        !currentPage.startsWith('blog/') && !currentPage.startsWith('tools/') && (
           <SEO
             title="Page Not Found - SwapMyLook"
             description="The page you're looking for doesn't exist. Explore our AI fashion tools, outfit library, and style transformation features."
@@ -548,6 +552,16 @@ function AppContent() {
         <Route path="/ai-clothes-changer" element={
           <Suspense fallback={<LoadingFallback />}>
             <AIClothesChangerPage onPageChange={handlePageChange} />
+          </Suspense>
+        } />
+        <Route path="/tools" element={
+          <Suspense fallback={<LoadingFallback />}>
+            <ToolsPage onPageChange={handlePageChange} />
+          </Suspense>
+        } />
+        <Route path="/tools/generative-ai-quilt-design" element={
+          <Suspense fallback={<LoadingFallback />}>
+            <GenerativeAIQuiltDesignPage onPageChange={handlePageChange} />
           </Suspense>
         } />
         <Route path="*" element={

@@ -44,6 +44,12 @@ const pages = [
     changefreq: 'weekly',
     priority: '0.8',
     lastmod: new Date().toISOString().split('T')[0]
+  },
+  {
+    url: 'https://swapmylook.com/tools/generative-ai-quilt-design',
+    changefreq: 'weekly',
+    priority: '0.8',
+    lastmod: new Date().toISOString().split('T')[0]
   }
 ];
 

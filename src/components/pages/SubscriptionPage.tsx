@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { Switch } from '../ui/switch';
 import { Progress } from '../ui/progress';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
 import {
   Crown,
   Check,
@@ -402,22 +402,31 @@ export function SubscriptionPage({ onPageChange }: SubscriptionPageProps) {
           </Card>
         )}
 
-        {/* Billing Toggle */}
-        <div className="flex items-center justify-center space-x-4 mb-8">
-          <span className={`text-sm ${billingCycle === 'monthly' ? 'font-medium' : 'text-muted-foreground'}`}>
-            Monthly
-          </span>
-          <Switch
-            checked={billingCycle === 'yearly'}
-            onCheckedChange={(checked: boolean) => setBillingCycle(checked ? 'yearly' : 'monthly')}
-          />
-          <span className={`text-sm ${billingCycle === 'yearly' ? 'font-medium' : 'text-muted-foreground'}`}>
-            Yearly
-          </span>
+        {/* Billing Toggle - Tabs */}
+        <div className="flex flex-col items-center justify-center mb-8">
+          <Tabs
+            value={billingCycle}
+            onValueChange={(value: string) => setBillingCycle(value as 'monthly' | 'yearly')}
+            className="w-full max-w-md"
+          >
+            <TabsList className="grid grid-cols-2 w-full">
+              <TabsTrigger value="monthly" className="data-[state=active]:bg-pink-500 data-[state=active]:text-white">
+                Monthly
+              </TabsTrigger>
+              <TabsTrigger value="yearly" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white">
+                Yearly
+                {billingCycle === 'yearly' && (
+                  <Badge className="ml-2 bg-green-100 text-green-700 border-green-200 text-xs">
+                    Save 20%
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
           {billingCycle === 'yearly' && (
-            <Badge className="bg-green-100 text-green-700 border-green-200">
-              Save 20%
-            </Badge>
+            <p className="text-sm text-green-600 mt-2">
+              Get 2 months free when you choose yearly billing
+            </p>
           )}
         </div>
 

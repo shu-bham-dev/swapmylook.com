@@ -85,3 +85,73 @@ export const virtualTryOnSEO = {
     "Try outfits online using AI. Upload your photo and clothing image to preview looks instantly with SwapMyLook.",
   url: "https://swapmylook.com/virtual-try-on"
 };
+
+export const toolsPageSEO = {
+  title: "Developer & Design Tools - SwapMyLook",
+  description:
+    "Free collection of handy tools for developers, designers, and content creators. Color pickers, image resizers, URL shorteners, character counters, and more.",
+  url: "https://swapmylook.com/tools",
+  schema: {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "SwapMyLook Tools Collection",
+    "description": "A collection of free tools for developers, designers, and content creators",
+    "mainEntity": {
+      "@type": "ItemList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Color Picker"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Image Resizer"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Character Counter"
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "name": "URL Shortener"
+        },
+        {
+          "@type": "ListItem",
+          "position": 5,
+          "name": "QR Code Generator"
+        }
+      ]
+    }
+  }
+};
+
+export const generativeAIQuiltDesignSEO = {
+  title: "Generative AI Quilt Design - Create Unique Quilt Patterns with AI | SwapMyLook",
+  description:
+    "Generate beautiful, unique quilt patterns using artificial intelligence. Free AI quilt design tool for quilters, designers, and craft enthusiasts. Create custom quilt designs in seconds.",
+  url: "https://swapmylook.com/tools/generative-ai-quilt-design",
+  schema: {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Generative AI Quilt Design Tool",
+    "description": "AI-powered tool to create unique quilt patterns and designs",
+    "applicationCategory": "DesignApplication",
+    "operatingSystem": "Web",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "featureList": [
+      "AI-generated quilt patterns",
+      "Custom color palettes",
+      "Multiple design styles",
+      "High-resolution downloads",
+      "Commercial use allowed"
+    ]
+  }
+};
