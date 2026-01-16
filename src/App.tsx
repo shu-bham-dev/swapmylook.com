@@ -307,7 +307,7 @@ function AppContent() {
             <img
               src="/images/acc-what1.jpeg"
               alt="AI outfit transformation example"
-              className="w-full h-48 object-cover"
+              className="w-full h-full object-contain"
             />
             <div className="p-6">
               <h3 className="font-semibold mb-2">Dress Transformation</h3>
@@ -321,7 +321,7 @@ function AppContent() {
             <img
               src="/images/acc-what2.webp"
               alt="AI color transformation example"
-              className="w-full h-48 object-cover"
+              className="w-full h-full object-contain"
             />
             <div className="p-6">
               <h3 className="font-semibold mb-2">Color Transformation</h3>
@@ -335,7 +335,7 @@ function AppContent() {
             <img
               src="/images/acc-what3.webp"
               alt="AI seasonal style transformation"
-              className="w-full h-48 object-cover"
+              className="w-full h-full object-contain"
             />
             <div className="p-6">
               <h3 className="font-semibold mb-2">Seasonal Style Switch</h3>

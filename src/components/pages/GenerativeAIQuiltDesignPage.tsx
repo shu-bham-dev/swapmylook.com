@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { Slider } from '../ui/slider';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import {
   Palette,
   Grid3x3,
@@ -251,16 +249,77 @@ export function GenerativeAIQuiltDesignPage({ onPageChange }: GenerativeAIQuiltD
   };
 
   const handleDownload = (designId: number) => {
-    toast.success('Download Started', {
-      description: 'Your quilt design is being downloaded.',
-    });
-    // In a real implementation, this would trigger an actual download
+    const design = generatedDesigns.find(d => d.id === designId);
+    if (!design) {
+      toast.error('Design not found', {
+        description: 'The design you are trying to download does not exist.',
+      });
+      return;
+    }
+
+    // Check if the image is a valid URL or placeholder
+    if (design.image.startsWith('http') || design.image.startsWith('/')) {
+      // Create a temporary anchor element to trigger download
+      const link = document.createElement('a');
+      link.href = design.image;
+      link.download = `quilt-design-${designId}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('Download Started', {
+        description: 'Your quilt design is being downloaded.',
+      });
+    } else {
+      // For placeholder images, show a message
+      toast.info('Placeholder Image', {
+        description: 'This is a placeholder image. Actual AI-generated designs would be downloadable.',
+      });
+    }
   };
 
-  const handleShare = (designId: number) => {
-    toast.success('Link Copied', {
-      description: 'Share link copied to clipboard.',
-    });
+  const handleShare = async (designId: number) => {
+    const design = generatedDesigns.find(d => d.id === designId);
+    if (!design) {
+      toast.error('Design not found', {
+        description: 'The design you are trying to share does not exist.',
+      });
+      return;
+    }
+
+    const shareUrl = window.location.href;
+    const shareText = `Check out this AI-generated quilt design: "${design.prompt.substring(0, 100)}..."`;
+    
+    // Try to use the Web Share API if available (mobile devices)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'AI Quilt Design',
+          text: shareText,
+          url: shareUrl,
+        });
+        toast.success('Shared successfully!', {
+          description: 'The design has been shared.',
+        });
+        return;
+      } catch (error) {
+        // User cancelled share or error occurred
+        console.log('Share cancelled or failed:', error);
+      }
+    }
+    
+    // Fallback: Copy link to clipboard
+    try {
+      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+      toast.success('Link Copied', {
+        description: 'Share link copied to clipboard.',
+      });
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      toast.error('Failed to copy', {
+        description: 'Could not copy link to clipboard. Please try again.',
+      });
+    }
   };
 
   const handleRegenerate = (designId: number) => {
@@ -312,9 +371,9 @@ export function GenerativeAIQuiltDesignPage({ onPageChange }: GenerativeAIQuiltD
               </div>
               <Button
                 onClick={() => onPageChange('login')}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
-                <LogIn className="w-4 h-4 mr-2" />
+                <LogIn className="w-4 h-4 mr-2 text-white" />
                 Log In to Continue
               </Button>
             </div>
@@ -424,46 +483,98 @@ export function GenerativeAIQuiltDesignPage({ onPageChange }: GenerativeAIQuiltD
                 {/* Color Palette */}
                 <div>
                   <Label className="text-lg font-semibold mb-3 block">Color Palette</Label>
-                  <div className="flex items-center space-x-4">
+                  <div className="flex flex-wrap items-center gap-3">
                     {colorPalette.map((color, index) => (
-                      <div
-                        key={index}
-                        className="w-10 h-10 rounded-full cursor-pointer border-2 border-gray-300 shadow-md"
-                        style={{ backgroundColor: color }}
-                        onClick={() => {
-                          // In a real implementation, this would open a color picker
-                          const newColors = [...colorPalette];
-                          newColors[index] = '#FF6B6B';
-                          setColorPalette(newColors);
-                        }}
-                      />
+                      <div key={index} className="relative group">
+                        <div
+                          className="w-12 h-12 rounded-full cursor-pointer border-2 border-gray-300 shadow-md transition-transform hover:scale-110"
+                          style={{ backgroundColor: color }}
+                          onClick={() => {
+                            // Open a color picker - for now, cycle through predefined colors
+                            const predefinedColors = [
+                              '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2',
+                              '#9D4EDD', '#FF9E6D', '#7209B7', '#3A86FF', '#FB5607'
+                            ];
+                            const currentIndex = predefinedColors.indexOf(color);
+                            const nextColor = predefinedColors[(currentIndex + 1) % predefinedColors.length];
+                            const newColors = [...colorPalette];
+                            newColors[index] = nextColor;
+                            setColorPalette(newColors);
+                          }}
+                        />
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full border border-gray-300 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Palette className="w-3 h-3 text-gray-600" />
+                        </div>
+                      </div>
                     ))}
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setColorPalette([...colorPalette, '#000000'])}
+                      onClick={() => {
+                        const newColors = [...colorPalette];
+                        const availableColors = ['#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2', '#9D4EDD'];
+                        const randomColor = availableColors[Math.floor(Math.random() * availableColors.length)];
+                        setColorPalette([...newColors, randomColor]);
+                      }}
+                      className="h-12 w-12 rounded-full flex items-center justify-center"
                     >
-                      <Palette className="w-4 h-4 mr-2" />
-                      Add Color
+                      <span className="text-xl">+</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (colorPalette.length > 1) {
+                          setColorPalette(colorPalette.slice(0, -1));
+                        }
+                      }}
+                      disabled={colorPalette.length <= 1}
+                      className="h-8"
+                    >
+                      Remove
                     </Button>
                   </div>
+                  <p className="text-sm text-muted-foreground mt-3">
+                    Click on any color to cycle through options. Click + to add a new color.
+                  </p>
                 </div>
 
                 {/* Complexity Slider */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <Label className="text-lg font-semibold">Pattern Complexity</Label>
-                    <span className="text-sm font-medium">{complexity[0]}/5</span>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-lg font-semibold flex items-center">
+                      <Layers className="w-5 h-5 mr-2 text-blue-600" />
+                      Pattern Complexity
+                    </Label>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-100">
+                        <span className="text-blue-700 font-bold text-lg">{complexity[0]}</span>
+                      </div>
+                      <span className="text-sm font-medium text-muted-foreground">/5</span>
+                    </div>
                   </div>
-                  <Slider
-                    value={complexity}
-                    onValueChange={setComplexity}
-                    max={5}
-                    min={1}
-                    step={1}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                  <div className="px-2">
+                    <Slider
+                      value={complexity}
+                      onValueChange={setComplexity}
+                      max={5}
+                      min={1}
+                      step={1}
+                      className="w-full [&_[data-slot=slider-track]]:bg-gray-200 [&_[data-slot=slider-range]]:bg-blue-600 [&_[data-slot=slider-thumb]]:border-2 [&_[data-slot=slider-thumb]]:border-blue-600 [&_[data-slot=slider-thumb]]:bg-white [&_[data-slot=slider-thumb]]:shadow-lg"
+                    />
+                  </div>
+                  <div className="flex justify-between px-1">
+                    {[1, 2, 3, 4, 5].map((value) => (
+                      <div
+                        key={value}
+                        className={`flex flex-col items-center ${value === complexity[0] ? 'text-blue-600 font-semibold' : 'text-muted-foreground'}`}
+                      >
+                        <div className={`w-3 h-3 rounded-full mb-2 ${value === complexity[0] ? 'bg-blue-600' : 'bg-gray-300'}`} />
+                        <span className="text-sm font-medium">{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-between text-sm text-muted-foreground px-1">
                     <span>Simple</span>
                     <span>Moderate</span>
                     <span>Complex</span>
@@ -488,36 +599,36 @@ export function GenerativeAIQuiltDesignPage({ onPageChange }: GenerativeAIQuiltD
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
                       <Label className="text-lg font-semibold mb-3 block">Grid Layout</Label>
-                      <div className="space-y-4">
+                      <div className="space-y-6">
                         <div>
-                          <Label htmlFor="rows" className="text-sm">Rows</Label>
-                          <div className="flex items-center space-x-3">
+                          <Label htmlFor="rows" className="text-sm block mb-2">Rows</Label>
+                          <div className="flex items-center space-x-4">
                             <Slider
                               value={[rows]}
                               onValueChange={(value: number[]) => setRows(value[0])}
                               max={16}
                               min={4}
                               step={1}
-                              className="flex-1"
+                              className="flex-1 min-w-0 [&_[data-slot=slider-track]]:bg-gray-200 [&_[data-slot=slider-range]]:bg-blue-600 [&_[data-slot=slider-thumb]]:border-2 [&_[data-slot=slider-thumb]]:border-blue-600 [&_[data-slot=slider-thumb]]:bg-white [&_[data-slot=slider-thumb]]:shadow-lg"
                             />
-                            <span className="text-sm font-medium w-8">{rows}</span>
+                            <span className="text-sm font-medium w-10 text-center">{rows}</span>
                           </div>
                         </div>
                         <div>
-                          <Label htmlFor="columns" className="text-sm">Columns</Label>
-                          <div className="flex items-center space-x-3">
+                          <Label htmlFor="columns" className="text-sm block mb-2">Columns</Label>
+                          <div className="flex items-center space-x-4">
                             <Slider
                               value={[columns]}
                               onValueChange={(value: number[]) => setColumns(value[0])}
                               max={16}
                               min={4}
                               step={1}
-                              className="flex-1"
+                              className="flex-1 min-w-0 [&_[data-slot=slider-track]]:bg-gray-200 [&_[data-slot=slider-range]]:bg-blue-600 [&_[data-slot=slider-thumb]]:border-2 [&_[data-slot=slider-thumb]]:border-blue-600 [&_[data-slot=slider-thumb]]:bg-white [&_[data-slot=slider-thumb]]:shadow-lg"
                             />
-                            <span className="text-sm font-medium w-8">{columns}</span>
+                            <span className="text-sm font-medium w-10 text-center">{columns}</span>
                           </div>
                         </div>
                       </div>
@@ -525,13 +636,13 @@ export function GenerativeAIQuiltDesignPage({ onPageChange }: GenerativeAIQuiltD
 
                     <div>
                       <Label className="text-lg font-semibold mb-3 block">Symmetry</Label>
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {symmetryOptions.map((option) => (
                           <Button
                             key={option.id}
                             variant={symmetry === option.id ? "default" : "outline"}
                             onClick={() => setSymmetry(option.id)}
-                            className={`w-full justify-start ${symmetry === option.id ? 'bg-blue-600 text-white' : ''}`}
+                            className={`w-full justify-start py-3 ${symmetry === option.id ? 'bg-blue-600 text-white' : ''}`}
                           >
                             {option.label}
                           </Button>
@@ -549,8 +660,8 @@ export function GenerativeAIQuiltDesignPage({ onPageChange }: GenerativeAIQuiltD
                 >
                   {!isLoggedIn ? (
                     <>
-                      <LogIn className="w-5 h-5 mr-2" />
-                      Log In to Generate
+                      <LogIn className="w-5 h-5 mr-2 text-white" />
+                      <div className="text-white">Log In to Generate</div>
                     </>
                   ) : userQuota && userQuota.remaining <= 0 ? (
                     <>
@@ -642,7 +753,7 @@ export function GenerativeAIQuiltDesignPage({ onPageChange }: GenerativeAIQuiltD
               </h2>
               <div className="space-y-4">
                 <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
                     <span className="text-blue-600 font-bold">1</span>
                   </div>
                   <div>
@@ -653,7 +764,7 @@ export function GenerativeAIQuiltDesignPage({ onPageChange }: GenerativeAIQuiltD
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
                     <span className="text-blue-600 font-bold">2</span>
                   </div>
                   <div>
@@ -664,7 +775,7 @@ export function GenerativeAIQuiltDesignPage({ onPageChange }: GenerativeAIQuiltD
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
                     <span className="text-blue-600 font-bold">3</span>
                   </div>
                   <div>
