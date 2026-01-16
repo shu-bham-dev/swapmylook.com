@@ -1,6 +1,5 @@
 // API service for communicating with the backend
-const API_BASE_URL = 'https://swapmylookcom-be-production.up.railway.app/api/v1';
-// const API_BASE_URL = 'http://localhost:3001/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
 import { toast } from '../utils/toast';
 
 interface ApiResponse<T> {
@@ -970,6 +969,106 @@ class ApiService {
     resetDate: string;
   }> {
     return this.request('/subscription/usage');
+  }
+
+  /**
+   * Generate quilt design using AI
+   */
+  async generateQuiltDesign(prompt: string, options?: {
+    style?: string;
+    colorPalette?: string[];
+    complexity?: number;
+    size?: string;
+    rows?: number;
+    columns?: number;
+    symmetry?: string;
+  }): Promise<{
+    jobId: string;
+    status: 'queued' | 'processing' | 'succeeded' | 'failed';
+    estimatedTime: number;
+    queuePosition?: number;
+  }> {
+    const payload = {
+      prompt,
+      options: options || {
+        style: 'modern',
+        colorPalette: ['#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2'],
+        complexity: 3,
+        size: 'throw',
+        rows: 8,
+        columns: 8,
+        symmetry: 'mirror'
+      }
+    };
+
+    return this.request<{
+      jobId: string;
+      status: 'queued' | 'processing' | 'succeeded' | 'failed';
+      estimatedTime: number;
+      queuePosition?: number;
+    }>('/tools/quilt-design', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  /**
+   * Get quilt design job status
+   */
+  async getQuiltDesignJobStatus(jobId: string): Promise<{
+    jobId: string;
+    status: 'queued' | 'processing' | 'succeeded' | 'failed';
+    userId: string;
+    createdAt: string;
+    updatedAt: string;
+    estimatedTime: number;
+    processingTime?: number;
+    outputImage?: {
+      id: string;
+      url: string;
+      width: number;
+      height: number;
+      sizeBytes: number;
+      prompt: string;
+      metadata: {
+        style: string;
+        colorPalette: string[];
+        complexity: number;
+        size: string;
+        rows: number;
+        columns: number;
+        symmetry: string;
+      };
+    };
+    error?: string;
+  }> {
+    return this.request<{
+      jobId: string;
+      status: 'queued' | 'processing' | 'succeeded' | 'failed';
+      userId: string;
+      createdAt: string;
+      updatedAt: string;
+      estimatedTime: number;
+      processingTime?: number;
+      outputImage?: {
+        id: string;
+        url: string;
+        width: number;
+        height: number;
+        sizeBytes: number;
+        prompt: string;
+        metadata: {
+          style: string;
+          colorPalette: string[];
+          complexity: number;
+          size: string;
+          rows: number;
+          columns: number;
+          symmetry: string;
+        };
+      };
+      error?: string;
+    }>(`/tools/quilt-design/${jobId}/status`);
   }
 
   /**
