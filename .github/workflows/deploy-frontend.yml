@@ -59,6 +59,7 @@ jobs:
         run: npm run build
         env:
           npm_config_optional: false
+          VITE_API_URL: 'https://swapmylookcom-be-production.up.railway.app/api/v1'
 
       - name: Deploy build folder to cPanel via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
